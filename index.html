@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="sw"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1b2c"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><title>Challenge ya Ibada</title>
+<style>
+:root{--ink:#0e1b2c;--ink2:#17293f;--line:#2a4160;--paper:#eef0e8;--mute:#8fa3bb;--tq:#2fb8a3;--gold:#e0b04a}
+*{box-sizing:border-box}html,body{margin:0;background:var(--ink);color:var(--paper);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+#app{max-width:520px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 14px 40px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+header b{font:600 20px Georgia,serif}header span{color:var(--mute);font-size:14px}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+.hero{text-align:center;padding:18px 14px}.ar{font-size:26px;color:var(--gold);direction:rtl}
+.big{font:700 72px/1.1 Georgia,serif}.sub{color:var(--mute);font-size:14px;margin-bottom:12px}
+.tap{width:200px;height:200px;border-radius:50%;background:var(--tq);color:var(--ink);font:700 54px Georgia,serif;box-shadow:0 0 0 10px #2fb8a31f;touch-action:manipulation;user-select:none}
+.tap:active{transform:scale(.96)}
+.undo{display:block;margin:14px auto 0;background:none;color:var(--mute);border:1px solid var(--line);border-radius:20px;padding:6px 16px}
+.win{border-color:var(--gold);color:var(--gold)}
+h3{margin:18px 0 6px;font:600 17px Georgia,serif}
+.row{display:flex;align-items:center;gap:8px;margin:6px 0}.rk{width:26px;text-align:center;color:var(--mute)}
+.bar{flex:1;position:relative;background:var(--ink2);border-radius:8px;height:34px;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;background:#2fb8a355}.bar b{position:relative;line-height:34px;padding-left:10px;font-weight:500}
+.me .bar{outline:1px solid var(--tq)}.n{width:62px;text-align:right;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse}td,th{padding:8px 4px;text-align:right;border-bottom:1px solid var(--line)}td:first-child,th:first-child{text-align:left}th{color:var(--mute);font-weight:500;font-size:13px}
+nav{position:sticky;top:8px;z-index:5;display:flex;background:#0b1624;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+nav button{flex:1;background:none;padding:12px 2px;color:var(--mute);font-size:13px}nav button.on{color:var(--tq);box-shadow:inset 0 -2px var(--tq)}
+input{width:100%;padding:12px;margin:6px 0;border-radius:10px;border:1px solid var(--line);background:var(--ink);color:var(--paper);font:inherit}
+.go{background:var(--tq);color:var(--ink);border-radius:10px;padding:12px 18px;font-weight:600;width:100%;margin-top:8px}
+.sm{background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 10px;margin-left:4px}
+.hi{background:#2fb8a31f}.ar2{direction:rtl;font-size:22px;line-height:1.9;color:var(--gold);margin-bottom:8px;max-height:200px;overflow:auto}.clamp{max-height:240px;overflow:auto;margin-bottom:8px}.chip.help{border-color:var(--gold);box-shadow:0 0 0 2px #e0b04a55}select{flex:1;min-width:0;padding:10px;margin:4px 4px 4px 0;border-radius:10px;border:1px solid var(--line);background:var(--ink);color:var(--paper);font:inherit}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.chip{width:44px;height:44px;border-radius:50%;background:var(--ink);border:1px solid var(--line);font-weight:600}.chip.on{background:var(--tq);color:var(--ink);border-color:var(--tq)}.chip:disabled{opacity:.6;cursor:default}.mut{color:var(--mute);font-size:14px}.err{color:#ff8a7a}
+nav{overflow-x:auto;scrollbar-width:none}nav::-webkit-scrollbar{display:none}nav button{flex:none;padding:12px 14px;white-space:nowrap}.lg{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:2px 10px;font-size:13px;margin-left:8px;color:var(--paper)}.tw{overflow-x:auto}
+</style></head><body><div id="app"></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,doc,setDoc,onSnapshot,collection,increment,arrayUnion,arrayRemove} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const CFG={apiKey:"AIzaSyA9WwxOhuhoy4JSx23bCP7b0UseZDMCC20",authDomain:"mayai-family.firebaseapp.com",projectId:"mayai-family",storageBucket:"mayai-family.firebasestorage.app",messagingSenderId:"108830336258",appId:"1:108830336258:web:b244804cf5ddbb6d6c8e1b"};
+
+const DCH=[{id:"ist",name:"Istighfar",ar:"أستغفر الله",target:1000},{id:"sal",name:"Swalatu ‘ala Nabiy",ar:"اللهم صل على محمد",target:1000}];
+const X={
+sw:{app:"Challenge ya Ibada",grp:"Vikundi",swNA:"Tafsiri ya Kiswahili haipatikani kwa maandishi haya bado.",gq:"Omba kuunda kikundi",gqd:"Ombi limetumwa, subiri Admin akubali",gqok:"Admin amekuruhusu kuunda kikundi kimoja.",gqH:"Maombi ya kuunda vikundi",addM:"Ongeza mwanachama",addB:"Ongeza",ldr:"Kiongozi wa kikundi",myG:"Vikundi vyangu",otherG:"Vikundi vingine",newG:"Tengeneza kikundi cha Qur’an",gName:"Jina la kikundi",create:"Tengeneza",gm:(n,r)=>"Wanachama "+n+" · raundi "+r+" zimekamilika",reqJ:"Omba kujiunga",reqd:"Umeomba, subiri kukubaliwa",full:"Kimejaa (30)",back:"← Rudi",leader:"Kiongozi",lead:"Kiongozi: mipangilio",styleL:"Mtindo wa usomaji",st_all:"Juzuu zigawanywe sawa kwa wote",st_pick:"Kila mwanachama achague juzuu zake",st_assign:"Kiongozi apange idadi ya kila mtu",reqs:"Maombi ya kujiunga",ok:"Kubali",no:"Kataa",leave:"Toka kikundi",gStart:"Tarehe ya kuanza raundi ya kwanza",gSet:"Kiongozi bado hajaweka tarehe ya kuanza.",rel:"Achia",szH:"Idadi ya juzuu za kila mtu (jumla lazima iwe 30)",szSum:s=>"Jumla "+s+"/30 (lazima iwe 30)",pickN:"Gusa juzuu isiyo na mtu kuichagua.",gmem:"Wanachama (▲▼ kupanga)",welcome:"Karibu 🌙",loginHint:"Weka jina lako na namba ya WhatsApp. Ukirudi, tumia namba ile ile.",name:"Jina",waPh:"WhatsApp (mf. 0712345678)",enter:"Ingia",badLogin:"Weka jina na namba sahihi ya WhatsApp.",out:"Toka",loading:"Inapakia…",
+tot:"Jumla",rem:"Ukumbusho",juz:"Juzuu",mem:"Wanachama",chs:"Mashindano",
+goal:n=>"lengo "+n,endsAt:l=>"siku inaisha saa 5 usiku (baki "+l+")",
+noWin:"Hakuna mshindi wa siku iliyopita bado",winPrev:"Mshindi wa siku iliyopita",sendWin:"Tuma washindi kwa WhatsApp",board:"Ubao wa leo",noMem:"Hakuna wanachama bado.",
+all:"Jumla ya yote",today:"Leo",winMsg:"Washindi wa siku iliyopita",noneWin:"hakuna mshindi",
+addFirst:"Ongeza wanachama kwanza.",setStart:"Weka tarehe ya kuanza raundi ya kwanza kwenye tab ya Wanachama.",firstStarts:d=>"Raundi ya kwanza inaanza "+d+".",round:n=>"Raundi "+n,
+left:(d,k)=>"Siku "+d+" zimebaki · Juzuu "+k+"/30 zimekamilika. Gusa namba ya juzuu yako ukimaliza.",juzW:"Juzuu",next:(d,n,e)=>"Raundi ijayo ("+d+") inaanza na "+n+" (Juzuu 1–"+e+").",
+prof:"Wasifu wangu",nameHint:"Jina (unaweza kubadilisha wakati wowote)",nickLbl:"Nickname yako",nickPh:"Nickname (si lazima)",gaveNick:n=>"Admin amekupa jina la utani: "+n+". Hilo ndilo linaloonekana kwenye mbao.",nickNote:"Nickname ikiwekwa, ndiyo itaonekana kwenye mbao zote.",save:"Hifadhi",
+noAdmin:"Bado hakuna admin. Wa kwanza kubonyeza ndiye admin.",iAdmin:"Mimi ni Admin",startH:"Tarehe ya kuanza raundi ya kwanza",membersOrd:"Wanachama (mkubwa → mdogo)",
+ordNote:"Mpangilio huu huamua Juzuu. Tumia ▲▼ kupanga kwa umri, na ‘Utani’ kumpa mtu jina la utani.",membersH:"Wanachama",adminOnly:"Admin pekee ndiye hupanga mpangilio, tarehe, majina ya utani na mashindano.",
+nick:"Utani",nickPrompt:n=>"Jina la utani la "+n+" (acha tupu kuondoa):",rm:n=>"Ondoa "+n+"?",
+hadithT:"Hadith ya leo",duaT:"Dua ya leo",loadFail:"Imeshindwa kupakia. Angalia mtandao.",retry:"Jaribu tena",send:"Tuma kwa WhatsApp",hadithShare:"📖 Hadith ya leo",duaShare:"🤲 Dua ya leo",
+srcNote:"Maandishi yanatoka moja kwa moja kwenye vyanzo vya wazi (hadith-api na alquran.cloud), kwa Kiarabu, Kiswahili (pale kinapopatikana) na Kiingereza. Hakuna AI inayoandika maandishi. Kwa uhakika zaidi, thibitisha na sunnah.com au mwalimu.",
+chH:"Mashindano",chNote:"Badilisha lengo la kila siku, ongeza mashindano mapya, au yaficha.",goalLbl:"Lengo la siku",rename:"Jina",hide:"Ficha",show:"Onyesha",hidden:"(yamefichwa)",
+addH:"Ongeza ushindani mpya",chName:"Jina la ushindani (mf. Subhanallah)",chAr:"Maandishi ya Kiarabu (si lazima)",add:"Ongeza",renameP:"Jina jipya:",custom:"Idadi nyingine (mf. 120)",addBtn:"Ongeza",helpQ:"Una dharura? Chagua juzuu na mtu wa kukusaidia",ask:"Omba msaada",helpCancel:"Ghairi",helpLine:(j,n)=>"Juzuu "+j+" inasomwa na "+n,helpMe:(j,n)=>"Unamsomea "+n+" Juzuu "+j+". Gusa namba ukimaliza."},
+en:{app:"Worship Challenge",grp:"Groups",swNA:"No Swahili translation is available for this text yet.",gq:"Request to create a group",gqd:"Request sent, wait for the Admin",gqok:"The Admin allowed you to create one group.",gqH:"Requests to create groups",addM:"Add a member",addB:"Add",ldr:"Group leader",myG:"My groups",otherG:"Other groups",newG:"Create a Qur’an group",gName:"Group name",create:"Create",gm:(n,r)=>n+" members · "+r+" rounds completed",reqJ:"Request to join",reqd:"Requested, wait for approval",full:"Full (30)",back:"← Back",leader:"Leader",lead:"Leader: settings",styleL:"Reading style",st_all:"Juz split equally among everyone",st_pick:"Each member picks their own juz",st_assign:"Leader sets how many each person reads",reqs:"Join requests",ok:"Accept",no:"Decline",leave:"Leave group",gStart:"Start date of the first round",gSet:"The leader has not set a start date yet.",rel:"Release",szH:"Juz per person (total must be 30)",szSum:s=>"Total "+s+"/30 (must be 30)",pickN:"Tap an unclaimed juz to pick it.",gmem:"Members (▲▼ to order)",welcome:"Welcome 🌙",loginHint:"Enter your name and WhatsApp number. When you return, use the same number.",name:"Name",waPh:"WhatsApp (e.g. 0712345678)",enter:"Enter",badLogin:"Enter a name and a valid WhatsApp number.",out:"Log out",loading:"Loading…",
+tot:"Totals",rem:"Reminder",juz:"Juz",mem:"Members",chs:"Challenges",
+goal:n=>"goal "+n,endsAt:l=>"day ends at 11 pm ("+l+" left)",
+noWin:"No winner for the previous day yet",winPrev:"Winner of the previous day",sendWin:"Send winners to WhatsApp",board:"Today's board",noMem:"No members yet.",
+all:"All-time totals",today:"Today",winMsg:"Winners of the previous day",noneWin:"no winner",
+addFirst:"Add members first.",setStart:"Set the start date of the first round in the Members tab.",firstStarts:d=>"The first round starts on "+d+".",round:n=>"Round "+n,
+left:(d,k)=>d+" days left · "+k+"/30 juz completed. Tap your juz number when you finish it.",juzW:"Juz",next:(d,n,e)=>"Next round ("+d+") starts with "+n+" (Juz 1–"+e+").",
+prof:"My profile",nameHint:"Name (you can change it anytime)",nickLbl:"Your nickname",nickPh:"Nickname (optional)",gaveNick:n=>"The admin gave you the nickname: "+n+". This is what shows on the boards.",nickNote:"If you set a nickname, it shows on all boards.",save:"Save",
+noAdmin:"There is no admin yet. The first person to tap becomes admin.",iAdmin:"I am the Admin",startH:"Start date of the first round",membersOrd:"Members (oldest → youngest)",
+ordNote:"This order decides the Juz. Use ▲▼ to order by age, and ‘Nick’ to give someone a nickname.",membersH:"Members",adminOnly:"Only the admin sets the order, date, nicknames and challenges.",
+nick:"Nick",nickPrompt:n=>"Nickname for "+n+" (leave empty to remove):",rm:n=>"Remove "+n+"?",
+hadithT:"Hadith of the day",duaT:"Dua of the day",loadFail:"Could not load. Check your connection.",retry:"Try again",send:"Send to WhatsApp",hadithShare:"📖 Hadith of the day",duaShare:"🤲 Dua of the day",
+srcNote:"The texts come straight from open sources (hadith-api and alquran.cloud), in Arabic, Swahili (where available) and English. No AI writes the texts. For extra certainty, verify on sunnah.com or with a teacher.",
+chH:"Challenges",chNote:"Change the daily goal of each challenge, add new challenges, or hide them.",goalLbl:"Daily goal",rename:"Name",hide:"Hide",show:"Show",hidden:"(hidden)",
+addH:"Add a new challenge",chName:"Challenge name (e.g. Subhanallah)",chAr:"Arabic text (optional)",add:"Add",renameP:"New name:",custom:"Other amount (e.g. 120)",addBtn:"Add",helpQ:"Emergency? Pick a juz and who will help you",ask:"Ask for help",helpCancel:"Cancel",helpLine:(j,n)=>"Juz "+j+" is being read by "+n,helpMe:(j,n)=>"You are reading Juz "+j+" for "+n+". Tap the number when done."}
+};
+let lang=localStorage.getItem("lang")==="en"?"en":"sw";
+const t=(k,...a)=>{const v=(X[lang]||X.sw)[k];return typeof v==="function"?v(...a):v};
+
+const $app=document.getElementById("app");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+// A "day" runs from 11 pm to 11 pm, so the new day (and winner) starts at 23:00
+const dayKey=(d=new Date())=>ymd(new Date(d.getTime()+36e5));
+const addDays=(d,n)=>new Date(d.getTime()+n*864e5);
+
+// Opens the regular WhatsApp (not WhatsApp Business) on Android; wa.me elsewhere
+function waShare(text){
+  const e=encodeURIComponent(text),web="https://wa.me/?text="+e;
+  if(/Android/i.test(navigator.userAgent))location.href="intent://send?text="+e+"#Intent;scheme=whatsapp;package=com.whatsapp;S.browser_fallback_url="+encodeURIComponent(web)+";end";
+  else window.open(web,"_blank");
+}
+
+const db=getFirestore(initializeApp(CFG));
+let S={members:[],start:"",admin:"",ch:[]},C={},D={},H={},P={},G={},O={},gsel="",ready=false,tab="",myid=localStorage.getItem("me"),timer={},err="";
+const M=()=>S.members;
+const CH=()=>S.ch&&S.ch.length?S.ch:DCH;
+const act=()=>CH().filter(c=>!c.off);
+const me=()=>M().find(m=>m.id===myid);
+const dn=m=>m.anick||m.nick||m.name;
+const cnt=(day,k,id)=>(C[day+"|"+k+"|"+id]||0)+(day===dayKey()&&id===myid?P[k]||0:0);
+const save=()=>setDoc(doc(db,"settings","main"),{members:S.members,start:S.start||"",admin:S.admin||"",ch:S.ch||[]},{merge:true});
+const chEdit=(i,o)=>{S.ch=CH().map((c,j)=>j===i?{...c,...o}:c);save();render()};
+const write=(k,n)=>setDoc(doc(db,"counts",dayKey()+"_"+k+"_"+myid),{day:dayKey(),type:k,mid:myid,n:increment(n)},{merge:true});
+const flush=k=>{const n=P[k];if(!n)return;P[k]=0;write(k,n)};
+function addCount(k,n){const key=dayKey()+"|"+k+"|"+myid,cur=cnt(dayKey(),k,myid);n=Math.max(n,-cur);if(!n)return;C[key]=(C[key]||0)+n;write(k,n);render()}
+
+onSnapshot(doc(db,"settings","main"),d=>{const x=d.exists()?d.data():{};S={members:x.members||[],start:x.start||"",admin:x.admin||"",ch:x.ch||[],gok:x.gok||[],greq:x.greq||[]};ready=true;draw()});
+onSnapshot(collection(db,"counts"),sn=>{C={};sn.forEach(d=>{const x=d.data();C[x.day+"|"+x.type+"|"+x.mid]=x.n||0});draw()});
+onSnapshot(collection(db,"juz"),sn=>{D={};H={};O={};sn.forEach(d=>{const x=d.data();D[d.id]=!!x.done;H[d.id]=x.helper||"";O[d.id]=x.owner||""});draw()});
+onSnapshot(collection(db,"groups"),sn=>{G={};sn.forEach(d=>{const x=d.data();G[d.id]={...x,members:x.members||[],pending:x.pending||[]}});draw()});
+document.addEventListener("visibilitychange",()=>{if(document.hidden)Object.keys(P).forEach(flush)});
+setInterval(()=>draw(),60000);
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+function draw(){if(document.activeElement&&["INPUT","SELECT"].includes(document.activeElement.tagName))return;render()}
+function left(){const n=new Date(),e=new Date(n);e.setHours(23,0,0,0);if(e<=n)e.setDate(e.getDate()+1);const m=Math.floor((e-n)/6e4);return Math.floor(m/60)+"h "+m%60+"m"}
+function ranked(day,k){return M().map(m=>({m,n:cnt(day,k,m.id)})).sort((a,b)=>b.n-a.n)}
+function board(day,c){const tg=c.target||1000;return ranked(day,c.id).map((r,i)=>`<div class="row${r.m.id===myid?" me":""}"><span class="rk">${i==0&&r.n>0?"👑":i+1}</span><div class="bar"><i style="width:${Math.min(100,r.n/tg*100)}%"></i><b>${esc(dn(r.m))}</b></div><span class="n">${r.n}${r.n>=tg?" ✅":""}</span></div>`).join("")}
+
+function chal(c){
+  const d=dayKey(),y=dayKey(new Date(Date.now()-864e5)),w=ranked(y,c.id)[0];
+  return `<div class="card hero">${c.ar?`<div class="ar">${esc(c.ar)}</div>`:`<h3>${esc(c.name)}</h3>`}<div class="big">${cnt(d,c.id,myid)}</div>
+  <div class="sub">${t("goal",c.target||1000)} · ${t("endsAt",left())}</div>
+  <button class="tap" data-t="${c.id}">+1</button><button class="undo" data-u="${c.id}">−1</button><div class="chips" style="justify-content:center;margin-top:14px">${[50,100,150,200].map(n=>`<button class="chip" style="width:auto;padding:0 16px;border-radius:22px" data-add="${c.id}|${n}">+${n}</button>`).join("")}</div><div class="row" style="margin-top:10px"><input id="ci-${c.id}" type="number" inputmode="numeric" placeholder="${t("custom")}"><button class="sm" data-addc="${c.id}">${t("addBtn")}</button></div></div>
+  <div class="card win">${w&&w.n>0?`🏆 ${t("winPrev")}: <b>${esc(dn(w.m))}</b> (${w.n})`:t("noWin")}<button class="undo" data-share>${t("sendWin")}</button></div>
+  <h3>${t("board")} · ${esc(c.name)}</h3>${M().length?board(d,c):`<p class="mut">${t("noMem")}</p>`}`;
+}
+function share(){
+  const y=dayKey(new Date(Date.now()-864e5));
+  const L=act().map(c=>{const w=ranked(y,c.id)[0];return w&&w.n>0?"• "+c.name+": "+dn(w.m)+" ("+w.n+")":"• "+c.name+": "+t("noneWin")});
+  waShare("🏆 "+t("winMsg")+"\n"+L.join("\n")+"\n\n"+t("app")+" 🌙");
+}
+function totals(){
+  const d=dayKey(),cs=act(),sum=(k,id)=>Object.keys(C).filter(x=>x.endsWith("|"+k+"|"+id)).reduce((a,x)=>a+C[x],0)+(P[k]&&id===myid?P[k]:0);
+  const tbl=f=>`<div class="card tw"><table><tr><th>${t("name")}</th>${cs.map(c=>`<th>${esc(c.name)}</th>`).join("")}</tr>${M().map(m=>`<tr class="${m.id===myid?"hi":""}"><td>${esc(dn(m))}</td>${cs.map(c=>`<td>${f(c.id,m.id)}</td>`).join("")}</tr>`).join("")}</table></div>`;
+  return `<h3>${t("all")}</h3>${tbl(sum)}<h3>${t("today")}</h3>${tbl((k,id)=>cnt(d,k,id))}`;
+}
+
+const sizes=n=>n==9?[5,4,3,3,3,3,3,3,3]:Array.from({length:n},(_,i)=>Math.floor(30/n)+(i<30%n?1:0));
+function assign(r,sz){const n=sz.length,s=((-r)%n+n)%n,out=Array(n);let j=1;for(let k=0;k<n;k++){const i=(s+k)%n;out[i]=[j,j+sz[i]-1];j+=sz[i]}return out}
+const fmt=d=>d.toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+const isA=()=>S.admin===myid;const updS=o=>setDoc(doc(db,"settings","main"),o,{merge:true});
+const updG=(id,o)=>setDoc(doc(db,"groups",id),o,{merge:true});
+const gids=g=>g.members.filter(i=>M().some(m=>m.id===i));
+const rdone=id=>{const c={};Object.keys(D).forEach(k=>{if(D[k]&&k.startsWith(id+"_")){const r=k.split("_")[1];c[r]=(c[r]||0)+1}});return Object.values(c).filter(v=>v>=30).length};
+const meta=x=>`<div class="mut">${t("gm",x.members.length,rdone(x.id))}</div>`;
+const hlines=(js,pre,own,nm,ow)=>js.filter(j=>H[pre+j]).map(j=>{const k=pre+j,h=H[k];return `<div class="mut">🤝 ${h===myid?t("helpMe",j,nm(ow(j))):t("helpLine",j,nm(h))}${own(j)&&!D[k]?` <button class="sm" data-hc="${k}">${t("helpCancel")}</button>`:""}</div>`}).join("");
+const hpanel=(todo,pre,ids,nm)=>todo.length&&ids.length>1?`<div class="mut" style="margin-top:10px">${t("helpQ")}</div><div class="row"><select id="hj">${todo.map(j=>`<option value="${j}">${t("juzW")} ${j}</option>`).join("")}</select><select id="hh">${ids.filter(i=>i!==myid).map(i=>`<option value="${i}">${esc(nm(i))}</option>`).join("")}</select><button class="sm" data-hs="${pre}">${t("ask")}</button></div>`:"";
+function groups(){
+  const g=G[gsel];if(g&&(g.members.includes(myid)||isA()))return gview({...g,id:gsel});
+  const gs=Object.entries(G).map(([id,x])=>({...x,id})),mine=gs.filter(x=>x.members.includes(myid)),oth=gs.filter(x=>!x.members.includes(myid));
+  const can=isA()||!S.admin||(S.gok||[]).includes(myid),gr=(S.greq||[]).filter(i=>M().some(m=>m.id===i));
+  const newBox=can?`<div class="card">${!isA()&&S.admin?`<div class="mut">${t("gqok")}</div>`:""}<input id="gn" placeholder="${t("gName")}"><button class="go" data-gc>${t("create")}</button></div>`:`<div class="card">${(S.greq||[]).includes(myid)?`<span class="mut">${t("gqd")}</span>`:`<button class="go" data-gq>${t("gq")}</button>`}</div>`;
+  const reqBox=isA()&&gr.length?`<h3>${t("gqH")}</h3>`+gr.map(i=>`<div class="card row" style="justify-content:space-between"><span>${esc(dn(M().find(m=>m.id===i)))}</span><span><button class="sm" data-gqa="${i}">${t("ok")}</button><button class="sm" data-gqn="${i}">${t("no")}</button></span></div>`).join(""):"";
+  const rb=x=>x.pending.includes(myid)?`<span class="mut">${t("reqd")}</span>`:x.members.length>=30?`<span class="mut">${t("full")}</span>`:`<button class="sm" data-rq="${x.id}">${t("reqJ")}</button>`;
+  const li=(x,b)=>`<div class="card row" style="justify-content:space-between"><span><b>${esc(x.name)}</b>${meta(x)}</span>${b}</div>`;
+  return reqBox+`<h3>${t("myG")}</h3>`+(mine.map(x=>li(x,`<button class="sm" data-go="${x.id}">›</button>`)).join("")||`<p class="mut">—</p>`)+`<h3>${t("otherG")}</h3>`+(oth.map(x=>li(x,isA()?`<button class="sm" data-go="${x.id}">›</button>`:rb(x))).join("")||`<p class="mut">—</p>`)+`<h3>${t("newG")}</h3>${newBox}`;
+}
+function gview(g){
+  const ids=gids(g),lead=g.leader===myid||isA(),nm=i=>{const m=M().find(x=>x.id===i);return m?dn(m):"?"},st=g.style||"all";
+  let h=`<button class="sm" data-go="">${t("back")}</button> <b>${esc(g.name)}</b><div class="mut">${t("leader")}: ${esc(nm(g.leader))} · ${t("gm",ids.length,rdone(g.id))}</div>`;
+  if(!g.start)h+=`<div class="card">${t("gSet")}</div>`;
+  else{
+    const s0=new Date(g.start+"T00:00:00"),now=new Date(ymd(new Date())+"T00:00:00"),r=Math.floor((now-s0)/(14*864e5));
+    if(r<0)h+=`<div class="card">${t("firstStarts",fmt(s0))}</div>`;
+    else{
+      const s=addDays(s0,r*14),e=addDays(s,13),pre=g.id+"_"+r+"_",days=Math.round((e-now)/864e5)+1,done=Object.keys(D).filter(k=>D[k]&&k.startsWith(pre)).length;
+      h+=`<div class="card"><b>${t("round",r+1)}</b> · ${fmt(s)} – ${fmt(e)}<div class="mut">${t("left",days,done)}</div></div>`+(st==="pick"?pick(ids,pre,nm):auto(g,ids,r,pre,nm,e));
+    }
+  }
+  return h+(lead?lpanel(g,ids,nm):`<button class="undo" data-lv="1">${t("leave")}</button>`);
+}
+function auto(g,ids,r,pre,nm,e){
+  const n=ids.length;if(!n)return"";
+  const sz=g.style==="assign"?ids.map(i=>(g.sz||{})[i]||0):sizes(n),a=assign(r,sz),sum=sz.reduce((x,y)=>x+y,0),idx=((-(r+1))%n+n)%n,nx=assign(r+1,sz);
+  return (sum!==30?`<p class="err">${t("szSum",sum)}</p>`:"")+ids.map((i,k)=>{
+    const own=i===myid,js=Array.from({length:Math.max(0,a[k][1]-a[k][0]+1)},(_,q)=>a[k][0]+q).filter(j=>j<=30),
+    chips=js.map(j=>{const key=pre+j,can=own||H[key]===myid;return `<button class="chip${D[key]?" on":""}${H[key]?" help":""}" data-j="${key}"${can?"":" disabled"}>${j}</button>`}).join(""),todo=js.filter(j=>!D[pre+j]);
+    return `<div class="card${own?" hi":""}"><b>${esc(nm(i))}</b> <span class="mut">${t("juzW")} ${js.length?js[0]+(js.length>1?" – "+js[js.length-1]:""):"—"}</span><div class="chips">${chips}</div>${hlines(js,pre,()=>own,nm,()=>i)}${own?hpanel(todo,pre,ids,nm):""}</div>`}).join("")
+  +`<p class="mut">${t("next",fmt(addDays(e,1)),esc(nm(ids[idx])),nx[idx][1])}</p>`;
+}
+function pick(ids,pre,nm){
+  const js=Array.from({length:30},(_,k)=>k+1),mine=js.filter(j=>O[pre+j]===myid),todo=mine.filter(j=>!D[pre+j]);
+  const chips=js.map(j=>{const k=pre+j,o=O[k];if(!o)return `<button class="chip" style="border-style:dashed;border-color:var(--tq)" data-cl="${k}">${j}</button>`;const can=o===myid||H[k]===myid;return `<button class="chip${D[k]?" on":""}${H[k]?" help":""}" style="${o===myid?"outline:2px solid var(--tq)":""}" data-j="${k}"${can?"":" disabled"}>${j}</button>`}).join("");
+  const leg=ids.map(i=>{const l=js.filter(j=>O[pre+j]===i);return l.length?`<div class="mut"><b>${esc(nm(i))}</b>: ${l.join(", ")}</div>`:""}).join("");
+  return `<div class="card"><div class="mut">${t("pickN")}</div><div class="chips">${chips}</div>${todo.map(j=>`<button class="sm" data-rel="${pre+j}">${t("rel")} ${j}</button>`).join("")}${hlines(js,pre,j=>O[pre+j]===myid,nm,j=>O[pre+j])}${hpanel(todo,pre,ids,nm)}</div><div class="card">${leg||`<span class="mut">—</span>`}</div>`;
+}
+function lpanel(g,ids,nm){
+  const st=g.style||"all",pend=(g.pending||[]).filter(i=>M().some(m=>m.id===i));
+  const out=M().filter(m=>!g.members.includes(m.id)),addBox=out.length&&ids.length<30?`<h3>${t("addM")}</h3><div class="card row"><select id="adm">${out.map(m=>`<option value="${m.id}">${esc(dn(m))}</option>`).join("")}</select><button class="sm" data-ad="1">${t("addB")}</button></div>`:"";
+  return `<h3>${t("lead")}</h3><div class="card"><div class="mut">${t("gName")}</div><input data-gf="name" value="${esc(g.name)}"><div class="mut">${t("styleL")}</div><select data-gf="style" style="width:100%">${["all","pick","assign"].map(x=>`<option value="${x}"${x===st?" selected":""}>${t("st_"+x)}</option>`).join("")}</select><div class="mut">${t("gStart")}</div><input type="date" data-gf="start" value="${g.start||""}">${isA()?`<div class="mut">${t("ldr")}</div><select data-gf="leader" style="width:100%">${ids.map(i=>`<option value="${i}"${i===g.leader?" selected":""}>${esc(nm(i))}</option>`).join("")}</select>`:""}</div>`
+  +(pend.length?`<h3>${t("reqs")}</h3>`+pend.map(i=>`<div class="card row" style="justify-content:space-between"><span>${esc(nm(i))}</span><span><button class="sm" data-ok="${i}">${t("ok")}</button><button class="sm" data-no="${i}">${t("no")}</button></span></div>`).join(""):"")
+  +addBox+`<h3>${t("gmem")}</h3>`+(st==="assign"?`<p class="mut">${t("szH")}</p>`:"")+ids.map((i,k)=>`<div class="card row" style="justify-content:space-between"><span>${k+1}. ${esc(nm(i))}</span><span>${st==="assign"?`<input type="number" min="0" max="30" data-sz="${i}" value="${(g.sz||{})[i]||0}" style="width:60px;margin:0">`:""}<button class="sm" data-gu="${k}">▲</button><button class="sm" data-gd="${k}">▼</button>${i!==myid&&i!==g.leader?`<button class="sm" data-gx="${i}">✕</button>`:""}</span></div>`).join("");
+}
+
+function members(){
+  const m0=me(),adm=S.admin,canM=!adm||adm===myid;
+  const prof=`<h3>${t("prof")}</h3><div class="card"><div class="mut">${t("nameHint")}</div><input id="pn" value="${esc(m0.name)}" placeholder="${t("name")}"><div class="mut">${t("nickLbl")}</div><input id="pk" value="${esc(m0.nick||"")}" placeholder="${t("nickPh")}">${m0.anick?`<div class="mut">${t("gaveNick",esc(m0.anick))}</div>`:`<div class="mut">${t("nickNote")}</div>`}<button class="go" data-prof>${t("save")}</button></div>`;
+  const claim=!adm?`<div class="card">${t("noAdmin")}<button class="go" data-claim>${t("iAdmin")}</button></div>`:"";
+  const head=canM?`<h3>${t("membersH")}</h3>`:`<h3>${t("membersH")}</h3><p class="mut">${t("adminOnly")}</p>`;
+  const list=M().map((m,i)=>`<div class="card row" style="justify-content:space-between"><span>${i+1}. ${esc(dn(m))}${dn(m)!==m.name?` <span class="mut">(${esc(m.name)})</span>`:""}${m.id===adm?" ⭐":""}</span>${canM?`<span><button class="sm" data-nk="${i}">${t("nick")}</button><button class="sm" data-del="${i}">✕</button></span>`:""}</div>`).join("");
+  return prof+claim+head+list;
+}
+
+function chsTab(){
+  return `<h3>${t("chH")}</h3><p class="mut">${t("chNote")}</p>`+CH().map((c,i)=>`<div class="card"><b>${esc(c.name)}</b> <span class="mut">${c.off?t("hidden"):""}</span><div class="mut">${t("goalLbl")}</div><input type="number" min="1" inputmode="numeric" data-tg="${i}" value="${c.target||1000}"><button class="sm" data-cr="${i}">${t("rename")}</button><button class="sm" data-ch="${i}">${c.off?t("show"):t("hide")}</button></div>`).join("")
+  +`<h3>${t("addH")}</h3><div class="card"><input id="cn" placeholder="${t("chName")}"><input id="ca" placeholder="${t("chAr")}"><input id="cg" type="number" inputmode="numeric" placeholder="${t("goalLbl")} (1000)"><button class="go" data-ca>${t("add")}</button></div>`;
+}
+
+const DU=["2:201","2:286","3:8","3:16","3:147","7:23","14:40","17:24","20:25","20:114","21:87","23:118","25:74","59:10"];
+let R={day:"",h:null,d:null};
+async function jget(us){for(const u of us){try{const x=await fetch(u);if(x.ok)return await x.json()}catch(e){}}return null}
+function loadRem(){
+  const day=dayKey();if(R.day===day)return;R={day,h:"load",d:"load"};
+  const k=Math.floor(Date.UTC(...day.split("-").map((v,i)=>i==1?+v-1:+v))/864e5),n=k%42+1,ref=DU[k%DU.length];
+  const B="https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/",one=j=>j&&(j.hadiths?.[0]||j.hadith?.[0]||j);
+  const g=e=>jget([B+e+"/"+n+".min.json",B+e+"/"+n+".json","https://raw.githubusercontent.com/fawazahmed0/hadith-api/1/editions/"+e+"/"+n+".min.json"]).then(one);
+  Promise.all([g("eng-nawawi"),g("ara-nawawi"),g("swa-nawawi")]).then(([en,ar,sw])=>{R.h=en&&en.text?{en:en.text,ar:(ar&&ar.text)||"",sw:(sw&&sw.text)||"",src:"Arba‘een an-Nawawi, Hadith "+(en.hadithnumber||n)+(en.grades&&en.grades[0]?" · "+en.grades[0].grade:"")}:"err";draw()});
+  Promise.all([jget(["https://api.alquran.cloud/v1/ayah/"+ref+"/editions/quran-uthmani,en.sahih"]),jget(["https://api.alquran.cloud/v1/ayah/"+ref+"/sw.barwani"])]).then(([j,w])=>{const a=j&&j.data;R.d=a&&a[1]&&a[1].text?{ar:a[0].text,en:a[1].text,sw:(w&&w.data&&w.data.text)||"",src:"Qur’an "+a[1].surah.number+":"+a[1].numberInSurah+" ("+a[1].surah.englishName+"), Sahih International"+(w&&w.data&&w.data.text?" · Kiswahili: Al-Barwani":"")}:"err";draw()});
+}
+function rem(){
+  loadRem();
+  const card=(h,o,k)=>`<h3>${h}</h3><div class="card">${o==="load"?`<p class="mut">${t("loading")}</p>`:!o||o==="err"?`<p class="mut">${t("loadFail")}</p><button class="undo" data-rt>${t("retry")}</button>`:`<div class="ar2">${esc(o.ar)}</div><div class="mut">Kiswahili</div>${o.sw?`<div class="clamp">${esc(o.sw)}</div>`:`<p class="mut">${t("swNA")}</p>`}<div class="mut">English</div><div class="clamp">${esc(o.en)}</div><div class="mut">${esc(o.src)}</div><button class="undo" data-sh="${k}">${t("send")}</button>`}</div>`;
+  return card(t("hadithT"),R.h,"h")+card(t("duaT"),R.d,"d")+`<p class="mut">${t("srcNote")}</p>`;
+}
+
+function login(){
+  return `<div class="card"><button class="lg" data-lang style="float:right">${lang==="sw"?"EN":"SW"}</button><h3>${t("welcome")}</h3><p class="mut">${t("loginHint")}</p>
+  <input id="nm" placeholder="${t("name")}"><input id="wa" inputmode="tel" placeholder="${t("waPh")}"><div class="err">${err}</div><button class="go" data-join>${t("enter")}</button></div>`;
+}
+
+function render(){
+  if(!ready){$app.innerHTML=`<p class="mut">${t("loading")}</p>`;return}
+  if(!me()){$app.innerHTML=login();return}
+  const adm=S.admin,canM=!adm||adm===myid,cs=act();
+  if(!["tot","rem","juz","mem","chs"].includes(tab)&&!cs.find(c=>c.id===tab))tab=cs[0]?cs[0].id:"tot";
+  const tabs=[...cs.map(c=>[c.id,c.name]),["tot",t("tot")],["rem",t("rem")],["juz",t("grp")],["mem",t("mem")],...(canM?[["chs",t("chs")]]:[])];
+  const cur=cs.find(c=>c.id===tab);
+  const body=cur?chal(cur):tab==="tot"?totals():tab==="rem"?rem():tab==="juz"?groups():tab==="chs"?chsTab():members();
+  $app.innerHTML=`<header><b>${t("app")}</b><span>${esc(dn(me()))} · <a href="#" data-out style="color:var(--tq)">${t("out")}</a><button class="lg" data-lang>${lang==="sw"?"EN":"SW"}</button></span></header><nav>${tabs.map(x=>`<button data-tab="${esc(x[0])}" class="${tab===x[0]?"on":""}">${esc(x[1])}</button>`).join("")}</nav>${body}`;
+}
+
+$app.addEventListener("click",e=>{
+  const b=e.target.closest("[data-t],[data-u],[data-tab],[data-join],[data-up],[data-dn],[data-del],[data-out],[data-j],[data-share],[data-prof],[data-claim],[data-nk],[data-sh],[data-rt],[data-lang],[data-cr],[data-ch],[data-ca],[data-add],[data-addc],[data-hs],[data-hc],[data-go],[data-gc],[data-rq],[data-cl],[data-rel],[data-ok],[data-no],[data-gu],[data-gd],[data-gx],[data-lv],[data-gq],[data-gqa],[data-gqn],[data-ad]");if(!b)return;
+  const d=b.dataset;
+  if(d.t){P[d.t]=(P[d.t]||0)+1;render();clearTimeout(timer[d.t]);timer[d.t]=setTimeout(()=>flush(d.t),700)}
+  else if(d.u){if(cnt(dayKey(),d.u,myid)>0){P[d.u]=(P[d.u]||0)-1;render();clearTimeout(timer[d.u]);timer[d.u]=setTimeout(()=>flush(d.u),700)}}
+  else if(d.j){setDoc(doc(db,"juz",d.j),{done:!D[d.j]},{merge:true})}
+  else if(d.add!==undefined){const [k,n]=d.add.split("|");addCount(k,+n)}
+  else if(d.addc!==undefined){const el=document.getElementById("ci-"+d.addc),n=Math.round(+el.value);if(!n)return;addCount(d.addc,n)}
+  else if(d.hs!==undefined){const j=document.getElementById("hj"),h=document.getElementById("hh");if(!j||!h||!j.value||!h.value)return;setDoc(doc(db,"juz",d.hs+j.value),{helper:h.value},{merge:true})}
+  else if(d.hc!==undefined){setDoc(doc(db,"juz",d.hc),{helper:""},{merge:true})}
+  else if(d.go!==undefined){gsel=d.go;render()}
+  else if(d.gc!==undefined){const n=document.getElementById("gn").value.trim();if(!n)return;if(S.admin&&!isA()){if(!(S.gok||[]).includes(myid))return;updS({gok:arrayRemove(myid)})}const id="g"+Date.now().toString(36);updG(id,{name:n,leader:myid,style:"all",start:"",members:[myid],pending:[],sz:{}});gsel=id;render()}
+  else if(d.gq!==undefined){updS({greq:arrayUnion(myid)})}
+  else if(d.gqa!==undefined){updS({greq:arrayRemove(d.gqa),gok:arrayUnion(d.gqa)})}
+  else if(d.gqn!==undefined){updS({greq:arrayRemove(d.gqn)})}
+  else if(d.ad!==undefined){const v=document.getElementById("adm");if(v&&v.value&&G[gsel].members.length<30)updG(gsel,{members:arrayUnion(v.value),pending:arrayRemove(v.value)})}
+  else if(d.rq!==undefined){updG(d.rq,{pending:arrayUnion(myid)})}
+  else if(d.cl!==undefined){if(!O[d.cl])setDoc(doc(db,"juz",d.cl),{owner:myid},{merge:true})}
+  else if(d.rel!==undefined){setDoc(doc(db,"juz",d.rel),{owner:"",helper:""},{merge:true})}
+  else if(d.ok!==undefined){if(G[gsel].members.length<30)updG(gsel,{pending:arrayRemove(d.ok),members:arrayUnion(d.ok)})}
+  else if(d.no!==undefined){updG(gsel,{pending:arrayRemove(d.no)})}
+  else if(d.gu!==undefined||d.gd!==undefined){const a=gids(G[gsel]),i=+(d.gu??d.gd);if(d.gu!==undefined&&i>0)[a[i-1],a[i]]=[a[i],a[i-1]];else if(d.gd!==undefined&&i<a.length-1)[a[i+1],a[i]]=[a[i],a[i+1]];updG(gsel,{members:a})}
+  else if(d.gx!==undefined){if(confirm(t("rm",dn(M().find(m=>m.id===d.gx)))))updG(gsel,{members:arrayRemove(d.gx)})}
+  else if(d.lv!==undefined){if(confirm(t("leave")+"?")){updG(gsel,{members:arrayRemove(myid)});gsel="";render()}}
+  else if(d.share!==undefined){share()}
+  else if(d.lang!==undefined){lang=lang==="sw"?"en":"sw";localStorage.setItem("lang",lang);render()}
+  else if(d.cr!==undefined){const i=+d.cr,v=prompt(t("renameP"),CH()[i].name);if(v&&v.trim())chEdit(i,{name:v.trim()})}
+  else if(d.ch!==undefined){const i=+d.ch;chEdit(i,{off:!CH()[i].off})}
+  else if(d.ca!==undefined){const nm=document.getElementById("cn").value.trim(),ar=document.getElementById("ca").value.trim(),tg=Math.max(1,+document.getElementById("cg").value||1000);if(!nm)return;S.ch=[...CH(),{id:"c"+Date.now().toString(36),name:nm,ar,target:tg}];save();render()}
+  else if(d.prof!==undefined){const n=document.getElementById("pn").value.trim(),k=document.getElementById("pk").value.trim();if(!n)return;S.members=M().map(m=>m.id===myid?{...m,name:n,nick:k}:m);save();render()}
+  else if(d.rt!==undefined){R.day="";render()}
+  else if(d.sh){const o=R[d.sh];if(o&&o.en)waShare((d.sh==="h"?t("hadithShare"):t("duaShare"))+"\n\n"+(o.ar||"")+"\n\n"+(o.sw?o.sw+"\n\n":"")+o.en+"\n\n— "+o.src+"\n\n"+t("app")+" 🌙")}
+  else if(d.claim!==undefined){S.admin=myid;save();render()}
+  else if(d.nk!==undefined){const i=+d.nk,m=M()[i],v=prompt(t("nickPrompt",m.name),m.anick||"");if(v===null)return;S.members=M().map((x,j)=>j===i?{...x,anick:v.trim()}:x);save();render()}
+  else if(d.tab){tab=d.tab;render()}
+  else if(d.out!==undefined){e.preventDefault();localStorage.removeItem("me");myid=null;render()}
+  else if(d.join!==undefined){
+    const nm=document.getElementById("nm").value.trim(),wa=document.getElementById("wa").value.replace(/\D/g,"").slice(-9);
+    if(!nm||wa.length<9){err=t("badLogin");render();err="";return}
+    let m=M().find(x=>x.wa===wa);
+    if(!m){m={id:"m"+Date.now().toString(36),name:nm,wa};S.members=[...M(),m];save()}
+    myid=m.id;localStorage.setItem("me",myid);render();
+  }
+  else{
+    const i=+(d.up??d.dn??d.del),a=[...M()];
+    if(d.up!==undefined&&i>0)[a[i-1],a[i]]=[a[i],a[i-1]];
+    else if(d.dn!==undefined&&i<a.length-1)[a[i+1],a[i]]=[a[i],a[i+1]];
+    else if(d.del!==undefined){if(!confirm(t("rm",dn(a[i]))))return;a.splice(i,1)}
+    S.members=a;save();render();
+  }
+});
+$app.addEventListener("change",e=>{
+  if(e.target.id==="st"){S.start=e.target.value;save()}
+  else if(e.target.dataset.gf){const f=e.target.dataset.gf,v=e.target.value;e.target.blur();updG(gsel,{[f]:v})}
+  else if(e.target.dataset.sz!==undefined){updG(gsel,{sz:{[e.target.dataset.sz]:Math.max(0,Math.round(+e.target.value||0))}})}
+  else if(e.target.dataset.tg!==undefined){chEdit(+e.target.dataset.tg,{target:Math.max(1,+e.target.value||1000)})}
+});
+</script></body></html>

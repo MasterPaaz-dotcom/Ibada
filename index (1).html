@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="sw"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1b2c"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><title>Challenge ya Ibada</title>
+<style>
+:root{--ink:#0e1b2c;--ink2:#17293f;--line:#2a4160;--paper:#eef0e8;--mute:#8fa3bb;--tq:#2fb8a3;--gold:#e0b04a}
+*{box-sizing:border-box}html,body{margin:0;background:var(--ink);color:var(--paper);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+#app{max-width:520px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 14px 40px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+header b{font:600 20px Georgia,serif}header span{color:var(--mute);font-size:14px}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+.hero{text-align:center;padding:18px 14px}.ar{font-size:26px;color:var(--gold);direction:rtl}
+.big{font:700 72px/1.1 Georgia,serif}.sub{color:var(--mute);font-size:14px;margin-bottom:12px}
+.tap{width:200px;height:200px;border-radius:50%;background:var(--tq);color:var(--ink);font:700 54px Georgia,serif;box-shadow:0 0 0 10px #2fb8a31f;touch-action:manipulation;user-select:none}
+.tap:active{transform:scale(.96)}
+.undo{display:block;margin:14px auto 0;background:none;color:var(--mute);border:1px solid var(--line);border-radius:20px;padding:6px 16px}
+.win{border-color:var(--gold);color:var(--gold)}
+h3{margin:18px 0 6px;font:600 17px Georgia,serif}
+.row{display:flex;align-items:center;gap:8px;margin:6px 0}.rk{width:26px;text-align:center;color:var(--mute)}
+.bar{flex:1;position:relative;background:var(--ink2);border-radius:8px;height:34px;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;background:#2fb8a355}.bar b{position:relative;line-height:34px;padding-left:10px;font-weight:500}
+.me .bar{outline:1px solid var(--tq)}.n{width:62px;text-align:right;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse}td,th{padding:8px 4px;text-align:right;border-bottom:1px solid var(--line)}td:first-child,th:first-child{text-align:left}th{color:var(--mute);font-weight:500;font-size:13px}
+nav{position:sticky;top:8px;z-index:5;display:flex;background:#0b1624;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+nav button{flex:none;background:none;padding:12px 14px;white-space:nowrap;color:var(--mute);font-size:13px}nav button.on{color:var(--tq);box-shadow:inset 0 -2px var(--tq)}
+input{width:100%;padding:12px;margin:6px 0;border-radius:10px;border:1px solid var(--line);background:var(--ink);color:var(--paper);font:inherit}
+.go{background:var(--tq);color:var(--ink);border-radius:10px;padding:12px 18px;font-weight:600;width:100%;margin-top:8px}
+.sm{background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 10px;margin-left:4px}
+.hi{background:#2fb8a31f}.ar2{direction:rtl;font-size:22px;line-height:1.9;color:var(--gold);margin-bottom:8px;max-height:200px;overflow:auto}.clamp{max-height:240px;overflow:auto;margin-bottom:8px}.chip.help{border-color:var(--gold);box-shadow:0 0 0 2px #e0b04a55}select{flex:1;min-width:0;padding:10px;margin:4px 4px 4px 0;border-radius:10px;border:1px solid var(--line);background:var(--ink);color:var(--paper);font:inherit;width:100%}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.chip{width:44px;height:44px;border-radius:50%;background:var(--ink);border:1px solid var(--line);font-weight:600}.chip.on{background:var(--tq);color:var(--ink);border-color:var(--tq)}.chip:disabled{opacity:.6;cursor:default}.mut{color:var(--mute);font-size:14px}.err{color:#ff8a7a}
+.lg{background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:2px 10px;font-size:13px;margin-left:8px;color:var(--paper)}.tw{overflow-x:auto}.pill{width:auto;padding:0 14px;border-radius:22px}
+</style></head><body><div id="app"></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,doc,setDoc,getDoc,getDocs,deleteDoc,updateDoc,onSnapshot,collection,query,where,increment,arrayUnion,arrayRemove} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const CFG={apiKey:"AIzaSyA9WwxOhuhoy4JSx23bCP7b0UseZDMCC20",authDomain:"mayai-family.firebaseapp.com",projectId:"mayai-family",storageBucket:"mayai-family.firebasestorage.app",messagingSenderId:"108830336258",appId:"1:108830336258:web:b244804cf5ddbb6d6c8e1b"};
+
+const DCH=[{id:"ist",name:"Istighfar",ar:"أستغفر الله",target:1000},{id:"sal",name:"Swalatu ‘ala Nabiy",ar:"اللهم صل على محمد",target:1000}];
+const X={
+sw:{app:"Challenge ya Ibada",welcome:"Karibu 🌙",loginHint:"Weka jina lako na namba ya WhatsApp. Ukirudi, tumia namba ile ile.",name:"Jina",waPh:"WhatsApp (mf. 0712345678)",enter:"Ingia",badLogin:"Weka jina na namba sahihi ya WhatsApp.",out:"Toka",loading:"Inapakia…",
+tot:"Jumla",rem:"Ukumbusho",juz:"Juzuu",mem:"Wasifu",chs:"Mashindano",
+goal:n=>"lengo "+n,endsAt:l=>"siku inaisha saa 5 usiku (baki "+l+")",
+noWin:"Hakuna mshindi wa siku iliyopita bado",winPrev:"Mshindi wa siku iliyopita",sendWin:"Tuma washindi kwa WhatsApp",board:"Ubao wa leo",noMem:"Hakuna wanachama bado.",
+all:"Jumla ya yote",today:"Leo",winMsg:"Washindi wa siku iliyopita",noneWin:"hakuna mshindi",
+setStart:"Kiongozi aweke tarehe ya kuanza raundi.",firstStarts:d=>"Raundi ya kwanza inaanza "+d+".",round:n=>"Raundi "+n,
+left:(d,k)=>"Siku "+d+" zimebaki · Juzuu "+k+"/30 zimekamilika.",juzW:"Juzuu",
+prof:"Wasifu wangu",nameHint:"Jina (unaweza kubadilisha wakati wowote)",nickLbl:"Nickname yako",nickPh:"Nickname (si lazima)",gaveNick:n=>"Admin amekupa jina la utani: "+n+".",nickNote:"Nickname ikiwekwa, ndiyo itaonekana kwenye mbao zote.",save:"Hifadhi",
+noAdmin:"Bado hakuna admin wa mashindano. Wa kwanza kubonyeza ndiye admin.",iAdmin:"Mimi ni Admin",
+hadithT:"Hadith ya leo",duaT:"Dua ya leo",loadFail:"Imeshindwa kupakia. Angalia mtandao.",retry:"Jaribu tena",send:"Tuma kwa WhatsApp",hadithShare:"📖 Hadith ya leo",duaShare:"🤲 Dua ya leo",
+srcNote:"Maandishi yanatoka moja kwa moja kwenye vyanzo vya wazi (hadith-api na alquran.cloud). Hakuna AI inayoandika maandishi. Kwa uhakika zaidi, thibitisha na sunnah.com au mwalimu.",
+chH:"Mashindano",chNote:"Badilisha lengo la kila siku, ongeza mashindano mapya, au yaficha.",goalLbl:"Lengo la siku",rename:"Jina",hide:"Ficha",show:"Onyesha",hidden:"(yamefichwa)",
+addH:"Ongeza ushindani mpya",chName:"Jina la ushindani (mf. Subhanallah)",chAr:"Maandishi ya Kiarabu (si lazima)",add:"Ongeza",renameP:"Jina jipya:",custom:"Idadi nyingine (mf. 120)",addBtn:"Ongeza",helpQ:"Una dharura? Chagua juzuu na mtu wa kukusaidia",ask:"Omba msaada",helpCancel:"Ghairi",helpLine:(j,n)=>"Juzuu "+j+" inasomwa na "+n,helpMe:(j,n)=>"Unamsomea "+n+" Juzuu "+j+". Gusa namba ukimaliza.",
+noG:"Bado hujaingia kundi lolote. Tengeneza au jiunge hapa chini.",mk:"Tengeneza kundi jipya",gn:"Jina la kundi",jn:"Jiunge kwa kodi",gc:"Kodi ya kundi",go:"Jiunge",badG:"Kodi haipo au kundi limejaa (30).",code:"Kodi",leader:"Kiongozi",len:"Urefu wa raundi (siku)",style:"Style ya kugawana juzuu",s_eq:"Sawa kwa sawa",s_ord:"Kwa mpangilio (5, 4, 3…)",s_pick:"Kila mtu achague mwenyewe",startD:"Tarehe ya kuanza",lv:"Toka kwenye kundi",lvQ:"Utoke kwenye kundi?",allM:"Wanachama wote wa app",del:"Futa kundi hili",delQ:n=>"Futa kundi “"+n+"” kabisa? Haiwezi kurudishwa.",rmQ:n=>"Ondoa "+n+"?",shLink:"Tuma link ya kundi",shMsg:(n,u)=>"🤲 Jiunge na kundi la Quran “"+n+"”:\n"+u,pickN:"Gusa juzuu kuichagua, gusa tena ukimaliza, gusa mara ya tatu kuiachia.",waitN:"Utapata juzuu raundi ijayo."},
+en:{app:"Worship Challenge",welcome:"Welcome 🌙",loginHint:"Enter your name and WhatsApp number. When you return, use the same number.",name:"Name",waPh:"WhatsApp (e.g. 0712345678)",enter:"Enter",badLogin:"Enter a name and a valid WhatsApp number.",out:"Log out",loading:"Loading…",
+tot:"Totals",rem:"Reminder",juz:"Juz",mem:"Profile",chs:"Challenges",
+goal:n=>"goal "+n,endsAt:l=>"day ends at 11 pm ("+l+" left)",
+noWin:"No winner for the previous day yet",winPrev:"Winner of the previous day",sendWin:"Send winners to WhatsApp",board:"Today's board",noMem:"No members yet.",
+all:"All-time totals",today:"Today",winMsg:"Winners of the previous day",noneWin:"no winner",
+setStart:"The leader must set the round start date.",firstStarts:d=>"The first round starts on "+d+".",round:n=>"Round "+n,
+left:(d,k)=>d+" days left · "+k+"/30 juz completed.",juzW:"Juz",
+prof:"My profile",nameHint:"Name (you can change it anytime)",nickLbl:"Your nickname",nickPh:"Nickname (optional)",gaveNick:n=>"The admin gave you the nickname: "+n+".",nickNote:"If you set a nickname, it shows on all boards.",save:"Save",
+noAdmin:"There is no challenge admin yet. The first person to tap becomes admin.",iAdmin:"I am the Admin",
+hadithT:"Hadith of the day",duaT:"Dua of the day",loadFail:"Could not load. Check your connection.",retry:"Try again",send:"Send to WhatsApp",hadithShare:"📖 Hadith of the day",duaShare:"🤲 Dua of the day",
+srcNote:"The texts come straight from open sources (hadith-api and alquran.cloud). No AI writes the texts. For extra certainty, verify on sunnah.com or with a teacher.",
+chH:"Challenges",chNote:"Change the daily goal of each challenge, add new challenges, or hide them.",goalLbl:"Daily goal",rename:"Name",hide:"Hide",show:"Show",hidden:"(hidden)",
+addH:"Add a new challenge",chName:"Challenge name (e.g. Subhanallah)",chAr:"Arabic text (optional)",add:"Add",renameP:"New name:",custom:"Other amount (e.g. 120)",addBtn:"Add",helpQ:"Emergency? Pick a juz and who will help you",ask:"Ask for help",helpCancel:"Cancel",helpLine:(j,n)=>"Juz "+j+" is being read by "+n,helpMe:(j,n)=>"You are reading Juz "+j+" for "+n+". Tap the number when done.",
+noG:"You are not in any group yet. Create or join one below.",mk:"Create a new group",gn:"Group name",jn:"Join with a code",gc:"Group code",go:"Join",badG:"Code not found or group full (30).",code:"Code",leader:"Leader",len:"Round length (days)",style:"Juz sharing style",s_eq:"Equal",s_ord:"By order (5, 4, 3…)",s_pick:"Everyone picks their own",startD:"Start date",lv:"Leave group",lvQ:"Leave the group?",allM:"All app members",del:"Delete this group",delQ:n=>"Delete the group “"+n+"” permanently? This cannot be undone.",rmQ:n=>"Remove "+n+"?",shLink:"Share group link",shMsg:(n,u)=>"🤲 Join the Quran group “"+n+"”:\n"+u,pickN:"Tap a juz to take it, tap again when done, a third tap releases it.",waitN:"You get a juz from the next round."}
+};
+let lang=localStorage.getItem("lang")==="en"?"en":"sw";
+const t=(k,...a)=>{const v=(X[lang]||X.sw)[k];return typeof v==="function"?v(...a):v};
+const $app=document.getElementById("app");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const dayKey=(d=new Date())=>ymd(new Date(d.getTime()+36e5));
+const yKey=()=>dayKey(new Date(Date.now()-864e5));
+const addDays=(d,n)=>new Date(d.getTime()+n*864e5);
+const fmt=d=>d.toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+function waShare(text){
+  const e=encodeURIComponent(text),web="https://wa.me/?text="+e;
+  if(/Android/i.test(navigator.userAgent))location.href="intent://send?text="+e+"#Intent;scheme=whatsapp;package=com.whatsapp;S.browser_fallback_url="+encodeURIComponent(web)+";end";
+  else window.open(web,"_blank");
+}
+
+const db=getFirestore(initializeApp(CFG));
+let S={old:[],admin:"",ch:[],start:""},U={},C={},G=[],J={},P={},r1=false,r2=false,tab="",myid=localStorage.getItem("me"),timer={},err="",gerr="",gsel="",jg="",gu=null,ju=null,cd="",cu=null,ru={};
+const pg=new URLSearchParams(location.search).get("g");if(pg)localStorage.setItem("pg",pg);
+const CH=()=>S.ch&&S.ch.length?S.ch:DCH;
+const act=()=>CH().filter(c=>!c.off);
+const me=()=>U[myid];
+const dn=u=>u.anick||u.nick||u.name;
+const nm=id=>U[id]?dn(U[id]):((S.old.find(x=>x.id===id)||{}).name||"?");
+const cnt=(day,k,id)=>(C[day+"|"+k+"|"+id]||0)+(day===dayKey()&&id===myid?P[k]||0:0);
+const save=()=>setDoc(doc(db,"settings","main"),{admin:S.admin||"",ch:S.ch||[]},{merge:true});
+const chEdit=(i,o)=>{S.ch=CH().map((c,j)=>j===i?{...c,...o}:c);save();render()};
+const write=(k,n)=>{setDoc(doc(db,"counts",dayKey()+"_"+k+"_"+myid),{day:dayKey(),type:k,mid:myid,n:increment(n)},{merge:true});setDoc(doc(db,"users",me().wa),{tot:{[k]:increment(n)}},{merge:true})};
+const flush=k=>{const n=P[k];if(!n)return;P[k]=0;write(k,n)};
+function addCount(k,n){const key=dayKey()+"|"+k+"|"+myid,cur=cnt(dayKey(),k,myid);n=Math.max(n,-cur);if(!n)return;C[key]=(C[key]||0)+n;write(k,n);render()}
+const key=(g,r,j)=>g==="sib"?r+"_"+j:g+"_"+r+"_"+j;
+
+onSnapshot(doc(db,"settings","main"),d=>{const x=d.exists()?d.data():{};S={old:x.members||[],admin:x.admin||"",ch:x.ch||[],start:x.start||""};r1=true;draw()});
+onSnapshot(collection(db,"users"),sn=>{U={};sn.forEach(d=>{const x=d.data();U[x.id]=x});r2=true;draw()});
+function subC(){const d=dayKey();if(cd===d)return;cd=d;cu&&cu();cu=onSnapshot(query(collection(db,"counts"),where("day","in",[d,yKey()])),sn=>{C={};sn.forEach(s=>{const x=s.data();C[x.day+"|"+x.type+"|"+x.mid]=x.n||0});draw()})}
+function subG(){if(!myid||gu)return;gu=onSnapshot(query(collection(db,"groups"),where("members","array-contains",myid)),sn=>{G=[];sn.forEach(d=>G.push({id:d.id,...d.data()}));draw()})}
+function subJ(){ju&&ju();J={};ju=onSnapshot(query(collection(db,"juz"),where("g","==",jg)),sn=>{J={};sn.forEach(d=>J[d.id]=d.data());draw()})}
+subC();subG();
+document.addEventListener("visibilitychange",()=>{if(document.hidden)Object.keys(P).forEach(flush)});
+setInterval(()=>{subC();draw()},60000);
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+async function migrate(){
+  if(!S.old.length)return;const g=await getDoc(doc(db,"groups","sib"));if(g.exists())return;
+  await setDoc(doc(db,"groups","sib"),{name:"Ndugu",code:"sib",leader:S.admin||S.old[0].id,len:14,style:"ord",start:S.start||"",members:S.old.map(m=>m.id),rs:[],rr:-1});
+  (await getDocs(collection(db,"juz"))).forEach(d=>{if(!d.data().g)setDoc(d.ref,{g:"sib"},{merge:true})});
+}
+let mg=0;
+async function migUsers(){
+  for(const old of S.old){
+    if(!old.wa||U[old.id])continue;const rf=doc(db,"users",old.wa);if((await getDoc(rf)).exists())continue;
+    const tot={};(await getDocs(query(collection(db,"counts"),where("mid","==",old.id)))).forEach(d=>{const x=d.data();tot[x.type]=(tot[x.type]||0)+(x.n||0)});
+    await setDoc(rf,{id:old.id,name:old.name,wa:old.wa,nick:old.nick||"",anick:old.anick||"",tot});
+  }
+  migrate();
+}
+async function doJoin(n,wa){
+  const s=await getDoc(doc(db,"users",wa));let u;
+  if(s.exists())u=s.data();
+  else{
+    const old=S.old.find(x=>x.wa===wa);u={id:old?old.id:"m"+wa,name:old?old.name:n,wa};
+    if(old){u.nick=old.nick||"";u.anick=old.anick||"";const tot={};(await getDocs(query(collection(db,"counts"),where("mid","==",old.id)))).forEach(d=>{const x=d.data();tot[x.type]=(tot[x.type]||0)+(x.n||0)});u.tot=tot}
+    await setDoc(doc(db,"users",wa),u);U[u.id]=u;if(old)await migrate();
+  }
+  myid=u.id;localStorage.setItem("me",myid);subG();render();
+}
+async function joinCode(c){
+  c=(c||"").trim().toLowerCase();if(!c)return;const s=await getDoc(doc(db,"groups",c)),m=s.exists()?s.data().members||[]:[];
+  if(!s.exists()||(m.length>=30&&!m.includes(myid))){gerr=t("badG");render();return}
+  if(!m.includes(myid))await updateDoc(doc(db,"groups",c),{members:arrayUnion(myid)});
+  gsel=c;gerr="";tab="juz";render();
+}
+function draw(){
+  if(me()&&r1&&r2&&S.admin===myid&&!mg&&S.old.length){mg=1;migUsers()}
+  if(me()&&localStorage.getItem("pg")){const c=localStorage.getItem("pg");localStorage.removeItem("pg");joinCode(c)}
+  if(document.activeElement&&["INPUT","SELECT"].includes(document.activeElement.tagName))return;render()}
+function left(){const n=new Date(),e=new Date(n);e.setHours(23,0,0,0);if(e<=n)e.setDate(e.getDate()+1);const m=Math.floor((e-n)/6e4);return Math.floor(m/60)+"h "+m%60+"m"}
+function ranked(day,k){return Object.values(U).map(m=>({m,n:cnt(day,k,m.id)})).sort((a,b)=>b.n-a.n)}
+function board(day,c){
+  const tg=c.target||1000,rk=ranked(day,c.id),top=rk.slice(0,20),i=rk.findIndex(r=>r.m.id===myid);
+  const L=i>=20?[...top,{...rk[i],i}]:top;
+  return L.map((r,j)=>{const p=r.i??j;return `<div class="row${r.m.id===myid?" me":""}"><span class="rk">${p==0&&r.n>0?"👑":p+1}</span><div class="bar"><i style="width:${Math.min(100,r.n/tg*100)}%"></i><b>${esc(dn(r.m))}</b></div><span class="n">${r.n}${r.n>=tg?" ✅":""}</span></div>`}).join("")}
+function chal(c){
+  const d=dayKey(),w=ranked(yKey(),c.id)[0];
+  return `<div class="card hero">${c.ar?`<div class="ar">${esc(c.ar)}</div>`:`<h3>${esc(c.name)}</h3>`}<div class="big">${cnt(d,c.id,myid)}</div>
+  <div class="sub">${t("goal",c.target||1000)} · ${t("endsAt",left())}</div>
+  <button class="tap" data-t="${c.id}">+1</button><button class="undo" data-u="${c.id}">−1</button><div class="chips" style="justify-content:center;margin-top:14px">${[50,100,150,200].map(n=>`<button class="chip pill" data-add="${c.id}|${n}">+${n}</button>`).join("")}</div><div class="row" style="margin-top:10px"><input id="ci-${c.id}" type="number" inputmode="numeric" placeholder="${t("custom")}"><button class="sm" data-addc="${c.id}">${t("addBtn")}</button></div></div>
+  <div class="card win">${w&&w.n>0?`🏆 ${t("winPrev")}: <b>${esc(dn(w.m))}</b> (${w.n})`:t("noWin")}<button class="undo" data-share>${t("sendWin")}</button></div>
+  <h3>${t("board")} · ${esc(c.name)}</h3>${Object.keys(U).length?board(d,c):`<p class="mut">${t("noMem")}</p>`}`;
+}
+function share(){
+  const y=yKey(),L=act().map(c=>{const w=ranked(y,c.id)[0];return w&&w.n>0?"• "+c.name+": "+dn(w.m)+" ("+w.n+")":"• "+c.name+": "+t("noneWin")});
+  waShare("🏆 "+t("winMsg")+"\n"+L.join("\n")+"\n\n"+t("app")+" 🌙");
+}
+function totals(){
+  const d=dayKey(),cs=act(),sum=(k,id)=>((U[id].tot||{})[k]||0)+(P[k]&&id===myid?P[k]:0),all=id=>cs.reduce((s,c)=>s+sum(c.id,id),0);
+  let l=Object.values(U).sort((a,b)=>all(b.id)-all(a.id)).slice(0,30);if(me()&&!l.includes(me()))l.push(me());
+  const tbl=f=>`<div class="card tw"><table><tr><th>${t("name")}</th>${cs.map(c=>`<th>${esc(c.name)}</th>`).join("")}</tr>${l.map(m=>`<tr class="${m.id===myid?"hi":""}"><td>${esc(dn(m))}</td>${cs.map(c=>`<td>${f(c.id,m.id)}</td>`).join("")}</tr>`).join("")}</table></div>`;
+  return `<h3>${t("all")}</h3>${tbl(sum)}<h3>${t("today")}</h3>${tbl((k,id)=>cnt(d,k,id))}`;
+}
+
+function sz(n,st){
+  const b=Math.floor(30/n),rem=30-b*n;let r=rem;
+  return Array.from({length:n},(_,i)=>{if(st==="ord"){const e=Math.min(r,i?1:2);r-=e;return b+e}return b+(i<rem?1:0)});
+}
+function assign(ids,r,st){const n=ids.length,s=sz(n,st),o=((-r)%n+n)%n,out=Array(n);let j=1;for(let k=0;k<n;k++){const i=(o+k)%n;out[i]=[j,j+s[i]-1];j+=s[i]}return out}
+
+function juz(){
+  const g=G.find(x=>x.id===gsel)||G[0];
+  if(g){gsel=g.id;if(jg!==g.id){jg=g.id;subJ()}}
+  return (G.length?`<div class="chips">${G.map(x=>`<button class="chip pill${x.id===gsel?" on":""}" data-g="${x.id}">${esc(x.name)}</button>`).join("")}</div>`:`<p class="mut">${t("noG")}</p>`)
+  +(g?gbody(g):"")
+  +`<h3>${t("jn")}</h3><div class="card"><input id="gc" placeholder="${t("gc")}"><div class="err">${gerr}</div><button class="go" data-jn>${t("go")}</button></div><h3>${t("mk")}</h3><div class="card"><input id="gn" placeholder="${t("gn")}"><button class="go" data-mk>${t("add")}</button></div>`;
+}
+function gbody(g){
+  const ids=g.members||[],lead=g.leader===myid,len=g.len||14,now=new Date(ymd(new Date())+"T00:00:00"),st=g.start?new Date(g.start+"T00:00:00"):null;
+  let h=`<div class="card"><b>${esc(g.name)}</b><div class="mut">${t("code")}: ${esc(g.id)} · ${ids.length}/30 · ${t("leader")}: ${esc(nm(g.leader))}</div><button class="undo" data-gsh>${t("shLink")}</button>${lead||S.admin===myid?`<button class="undo err" data-gdel>${t("del")}</button>`:""}</div>`;
+  if(!st)h+=`<div class="card">${t("setStart")}</div>`;
+  else{
+    const r=Math.floor((now-st)/(len*864e5));
+    if(r<0)h+=`<div class="card">${t("firstStarts",fmt(st))}</div>`;
+    else{
+      const s=addDays(st,r*len),e=addDays(s,len-1),days=Math.round((e-now)/864e5)+1;
+      if(g.rr<r&&!ru[g.id+r]){ru[g.id+r]=1;updateDoc(doc(db,"groups",g.id),{rs:ids,rr:r})}
+      const done=Array.from({length:30},(_,i)=>(J[key(g.id,r,i+1)]||{}).done).filter(Boolean).length;
+      h+=`<div class="card"><b>${t("round",r+1)}</b> · ${fmt(s)} – ${fmt(e)}<div class="mut">${t("left",days,done)}</div></div>`;
+      if(g.style==="pick")h+=pick(g,r);
+      else{
+        const R=g.rr===r?g.rs:ids,a=assign(R,r,g.style);
+        if(ids.includes(myid)&&!R.includes(myid))h+=`<div class="card mut">${t("waitN")}</div>`;
+        h+=R.map((id,i)=>{const own=id===myid,rng=a[i],js=Array.from({length:Math.max(0,rng[1]-rng[0]+1)},(_,k)=>rng[0]+k);
+          const chips=js.map(j=>{const k=key(g.id,r,j),x=J[k]||{},can=own||x.helper===myid;return `<button class="chip${x.done?" on":""}${x.helper?" help":""}" data-j="${k}"${can?"":" disabled"}>${j}</button>`}).join("");
+          const hl=js.filter(j=>(J[key(g.id,r,j)]||{}).helper).map(j=>{const k=key(g.id,r,j),x=J[k];return `<div class="mut">🤝 ${x.helper===myid?t("helpMe",j,nm(id)):t("helpLine",j,nm(x.helper))}${own&&!x.done?` <button class="sm" data-hc="${k}">${t("helpCancel")}</button>`:""}</div>`}).join("");
+          const todo=js.filter(j=>!(J[key(g.id,r,j)]||{}).done);
+          const panel=own&&todo.length&&R.length>1?`<div class="mut" style="margin-top:10px">${t("helpQ")}</div><div class="row"><select id="hj">${todo.map(j=>`<option value="${j}">${t("juzW")} ${j}</option>`).join("")}</select><select id="hh">${R.filter(x=>x!==myid).map(x=>`<option value="${x}">${esc(nm(x))}</option>`).join("")}</select><button class="sm" data-hs="${r}">${t("ask")}</button></div>`:"";
+          return `<div class="card${own?" hi":""}"><b>${esc(nm(id))}</b> <span class="mut">${t("juzW")} ${rng[0]>rng[1]?"-":rng[0]==rng[1]?rng[0]:rng[0]+" – "+rng[1]}</span><div class="chips">${chips}</div>${hl}${panel}</div>`}).join("");
+      }
+    }
+  }
+  return h+(lead?leader(g):ids.includes(myid)?`<button class="undo" data-lv>${t("lv")}</button>`:"");
+}
+function pick(g,r){
+  const own={};
+  const chips=Array.from({length:30},(_,i)=>{const j=i+1,k=key(g.id,r,j),x=J[k]||{};if(x.owner)(own[x.owner]=own[x.owner]||[]).push(j);return `<button class="chip${x.done?" on":""}${x.owner&&!x.done?" help":""}" data-pk="${k}"${x.owner&&x.owner!==myid?" disabled":""}>${j}</button>`}).join("");
+  return `<div class="card"><div class="mut">${t("pickN")}</div><div class="chips">${chips}</div></div>`+Object.keys(own).map(id=>`<div class="mut">${esc(nm(id))}: ${own[id].join(", ")}</div>`).join("");
+}
+function leader(g){
+  const ids=g.members||[],len=g.len||14,free=Object.values(U).filter(u=>!ids.includes(u.id)).sort((a,b)=>dn(a).localeCompare(dn(b)));
+  return `<h3>${t("leader")}</h3><div class="card"><div class="mut">${t("len")}</div><div class="row">${[7,14,30].map(n=>`<button class="chip${len==n?" on":""}" data-len="${n}">${n}</button>`).join("")}<input id="gl" type="number" inputmode="numeric" value="${len}" style="width:90px"></div>
+  <div class="mut">${t("style")}</div><select id="gs">${["eq","ord","pick"].map(s=>`<option value="${s}"${(g.style||"eq")===s?" selected":""}>${t("s_"+s)}</option>`).join("")}</select>
+  <div class="mut">${t("startD")}</div><input type="date" id="gst" value="${g.start||""}"></div>
+  <h3>${t("mem")} (${ids.length}/30)</h3>`+ids.map((id,i)=>`<div class="card row" style="justify-content:space-between"><span>${i+1}. ${esc(nm(id))}${id===g.leader?" ⭐":""}</span><span><button class="sm" data-gu="${i}">▲</button><button class="sm" data-gd="${i}">▼</button>${id!==g.leader?`<button class="sm" data-gr="${i}">✕</button>`:""}</span></div>`).join("")
+  +`<div class="row"><select id="ga">${free.map(u=>`<option value="${u.id}">${esc(dn(u))}</option>`).join("")}</select><button class="sm" data-gad>${t("add")}</button></div>`;
+}
+
+function members(){
+  const m0=me(),adm=S.admin;
+  return `<h3>${t("prof")}</h3><div class="card"><div class="mut">${t("nameHint")}</div><input id="pn" value="${esc(m0.name)}" placeholder="${t("name")}"><div class="mut">${t("nickLbl")}</div><input id="pk" value="${esc(m0.nick||"")}" placeholder="${t("nickPh")}">${m0.anick?`<div class="mut">${t("gaveNick",esc(m0.anick))}</div>`:`<div class="mut">${t("nickNote")}</div>`}<button class="go" data-prof>${t("save")}</button></div>`
+  +(!adm?`<div class="card">${t("noAdmin")}<button class="go" data-claim>${t("iAdmin")}</button></div>`:"")
+  +`<h3>${t("allM")} (${Object.keys(U).length})</h3>`+Object.values(U).sort((a,b)=>dn(a).localeCompare(dn(b))).map(u=>`<div class="card row" style="justify-content:space-between"><span>${esc(dn(u))}${dn(u)!==u.name?` <span class="mut">(${esc(u.name)})</span>`:""}${u.id===adm?" ⭐":""}</span>${adm===myid&&u.id!==myid?`<button class="sm" data-ur="${esc(u.id)}">✕</button>`:""}</div>`).join("");
+}
+function chsTab(){
+  return `<h3>${t("chH")}</h3><p class="mut">${t("chNote")}</p>`+CH().map((c,i)=>`<div class="card"><b>${esc(c.name)}</b> <span class="mut">${c.off?t("hidden"):""}</span><div class="mut">${t("goalLbl")}</div><input type="number" min="1" inputmode="numeric" data-tg="${i}" value="${c.target||1000}"><button class="sm" data-cr="${i}">${t("rename")}</button><button class="sm" data-ch="${i}">${c.off?t("show"):t("hide")}</button></div>`).join("")
+  +`<h3>${t("addH")}</h3><div class="card"><input id="cn" placeholder="${t("chName")}"><input id="ca" placeholder="${t("chAr")}"><input id="cg" type="number" inputmode="numeric" placeholder="${t("goalLbl")} (1000)"><button class="go" data-ca>${t("add")}</button></div>`;
+}
+
+const DU=["2:201","2:286","3:8","3:16","3:147","7:23","14:40","17:24","20:25","20:114","21:87","23:118","25:74","59:10"];
+let R={day:"",h:null,d:null};
+async function jget(us){for(const u of us){try{const x=await fetch(u);if(x.ok)return await x.json()}catch(e){}}return null}
+function loadRem(){
+  const day=dayKey();if(R.day===day)return;R={day,h:"load",d:"load"};
+  const k=Math.floor(Date.UTC(...day.split("-").map((v,i)=>i==1?+v-1:+v))/864e5),n=k%42+1,ref=DU[k%DU.length];
+  const B="https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/",one=j=>j&&(j.hadiths?.[0]||j.hadith?.[0]||j);
+  const g=e=>jget([B+e+"/"+n+".min.json",B+e+"/"+n+".json","https://raw.githubusercontent.com/fawazahmed0/hadith-api/1/editions/"+e+"/"+n+".min.json"]).then(one);
+  Promise.all([g("eng-nawawi"),g("ara-nawawi")]).then(([en,ar])=>{R.h=en&&en.text?{en:en.text,ar:(ar&&ar.text)||"",src:"Arba‘een an-Nawawi, Hadith "+(en.hadithnumber||n)+(en.grades&&en.grades[0]?" · "+en.grades[0].grade:"")}:"err";draw()});
+  jget(["https://api.alquran.cloud/v1/ayah/"+ref+"/editions/quran-uthmani,en.sahih"]).then(j=>{const a=j&&j.data;R.d=a&&a[1]&&a[1].text?{ar:a[0].text,en:a[1].text,src:"Qur’an "+a[1].surah.number+":"+a[1].numberInSurah+" ("+a[1].surah.englishName+"), Sahih International"}:"err";draw()});
+}
+function rem(){
+  loadRem();
+  const card=(h,o,k)=>`<h3>${h}</h3><div class="card">${o==="load"?`<p class="mut">${t("loading")}</p>`:!o||o==="err"?`<p class="mut">${t("loadFail")}</p><button class="undo" data-rt>${t("retry")}</button>`:`<div class="ar2">${esc(o.ar)}</div><div class="clamp">${esc(o.en)}</div><div class="mut">${esc(o.src)}</div><button class="undo" data-sh="${k}">${t("send")}</button>`}</div>`;
+  return card(t("hadithT"),R.h,"h")+card(t("duaT"),R.d,"d")+`<p class="mut">${t("srcNote")}</p>`;
+}
+function login(){
+  return `<div class="card"><button class="lg" data-lang style="float:right">${lang==="sw"?"EN":"SW"}</button><h3>${t("welcome")}</h3><p class="mut">${t("loginHint")}</p>
+  <input id="nm" placeholder="${t("name")}"><input id="wa" inputmode="tel" placeholder="${t("waPh")}"><div class="err">${err}</div><button class="go" data-join>${t("enter")}</button></div>`;
+}
+function render(){
+  if(!r1||!r2){$app.innerHTML=`<p class="mut">${t("loading")}</p>`;return}
+  if(!me()){$app.innerHTML=login();return}
+  const adm=S.admin,canM=!adm||adm===myid,cs=act();
+  if(!["tot","rem","juz","mem","chs"].includes(tab)&&!cs.find(c=>c.id===tab))tab=cs[0]?cs[0].id:"tot";
+  const tabs=[...cs.map(c=>[c.id,c.name]),["tot",t("tot")],["rem",t("rem")],["juz",t("juz")],["mem",t("mem")],...(canM?[["chs",t("chs")]]:[])];
+  const cur=cs.find(c=>c.id===tab);
+  const body=cur?chal(cur):tab==="tot"?totals():tab==="rem"?rem():tab==="juz"?juz():tab==="chs"?chsTab():members();
+  $app.innerHTML=`<header><b>${t("app")} <small class="mut">v4</small></b><span>${esc(dn(me()))} · <a href="#" data-out style="color:var(--tq)">${t("out")}</a><button class="lg" data-lang>${lang==="sw"?"EN":"SW"}</button></span></header><nav>${tabs.map(x=>`<button data-tab="${esc(x[0])}" class="${tab===x[0]?"on":""}">${esc(x[1])}</button>`).join("")}</nav>${body}`;
+}
+
+const GD=()=>doc(db,"groups",gsel),V=id=>document.getElementById(id);
+$app.addEventListener("click",e=>{
+  const b=e.target.closest("[data-t],[data-u],[data-tab],[data-join],[data-out],[data-j],[data-share],[data-prof],[data-claim],[data-sh],[data-rt],[data-lang],[data-cr],[data-ch],[data-ca],[data-add],[data-addc],[data-hs],[data-hc],[data-g],[data-mk],[data-jn],[data-lv],[data-gsh],[data-len],[data-gu],[data-gd],[data-gr],[data-gad],[data-pk],[data-gdel],[data-ur]");if(!b)return;
+  const d=b.dataset;
+  if(d.t){P[d.t]=(P[d.t]||0)+1;render();clearTimeout(timer[d.t]);timer[d.t]=setTimeout(()=>flush(d.t),700)}
+  else if(d.u){if(cnt(dayKey(),d.u,myid)>0){P[d.u]=(P[d.u]||0)-1;render();clearTimeout(timer[d.u]);timer[d.u]=setTimeout(()=>flush(d.u),700)}}
+  else if(d.j){setDoc(doc(db,"juz",d.j),{g:gsel,done:!(J[d.j]||{}).done},{merge:true})}
+  else if(d.pk){const x=J[d.pk]||{},rf=doc(db,"juz",d.pk);if(!x.owner)setDoc(rf,{g:gsel,owner:myid,done:false},{merge:true});else if(x.owner===myid)setDoc(rf,x.done?{owner:"",done:false}:{done:true},{merge:true})}
+  else if(d.add!==undefined){const [k,n]=d.add.split("|");addCount(k,+n)}
+  else if(d.addc!==undefined){const n=Math.round(+V("ci-"+d.addc).value);if(!n)return;addCount(d.addc,n)}
+  else if(d.hs!==undefined){const j=V("hj"),h=V("hh");if(!j||!h||!j.value||!h.value)return;setDoc(doc(db,"juz",key(gsel,+d.hs,j.value)),{g:gsel,helper:h.value},{merge:true})}
+  else if(d.hc!==undefined){setDoc(doc(db,"juz",d.hc),{helper:""},{merge:true})}
+  else if(d.g!==undefined){gsel=d.g;render()}
+  else if(d.mk!==undefined){const n=V("gn").value.trim();if(!n)return;const id=Math.random().toString(36).slice(2,7);setDoc(doc(db,"groups",id),{name:n,code:id,leader:myid,len:14,style:"eq",start:ymd(new Date()),members:[myid],rs:[],rr:-1});gsel=id;render()}
+  else if(d.jn!==undefined){joinCode(V("gc").value)}
+  else if(d.lv!==undefined){if(confirm(t("lvQ")))updateDoc(GD(),{members:arrayRemove(myid)})}
+  else if(d.gsh!==undefined){const g=G.find(x=>x.id===gsel);if(g)waShare(t("shMsg",g.name,location.origin+location.pathname+"?g="+g.id))}
+  else if(d.gdel!==undefined){const g=G.find(x=>x.id===gsel);if(!g||!confirm(t("delQ",g.name)))return;const id=g.id;gsel="";jg="";(async()=>{(await getDocs(query(collection(db,"juz"),where("g","==",id)))).forEach(d=>deleteDoc(d.ref));await deleteDoc(doc(db,"groups",id))})()}
+  else if(d.ur!==undefined){const u=U[d.ur];if(u&&confirm(t("rmQ",dn(u))))deleteDoc(doc(db,"users",u.wa))}
+  else if(d.len!==undefined){updateDoc(GD(),{len:+d.len})}
+  else if(d.gad!==undefined){const g=G.find(x=>x.id===gsel),a=V("ga");if(g&&a&&a.value&&g.members.length<30)updateDoc(GD(),{members:arrayUnion(a.value)})}
+  else if(d.gu!==undefined||d.gd!==undefined||d.gr!==undefined){
+    const g=G.find(x=>x.id===gsel);if(!g)return;const a=[...g.members],i=+(d.gu??d.gd??d.gr);
+    if(d.gu!==undefined&&i>0)[a[i-1],a[i]]=[a[i],a[i-1]];
+    else if(d.gd!==undefined&&i<a.length-1)[a[i+1],a[i]]=[a[i],a[i+1]];
+    else if(d.gr!==undefined){if(!confirm(t("rmQ",nm(a[i]))))return;a.splice(i,1)}
+    updateDoc(GD(),{members:a})}
+  else if(d.share!==undefined){share()}
+  else if(d.lang!==undefined){lang=lang==="sw"?"en":"sw";localStorage.setItem("lang",lang);render()}
+  else if(d.cr!==undefined){const i=+d.cr,v=prompt(t("renameP"),CH()[i].name);if(v&&v.trim())chEdit(i,{name:v.trim()})}
+  else if(d.ch!==undefined){const i=+d.ch;chEdit(i,{off:!CH()[i].off})}
+  else if(d.ca!==undefined){const n=V("cn").value.trim(),ar=V("ca").value.trim(),tg=Math.max(1,+V("cg").value||1000);if(!n)return;S.ch=[...CH(),{id:"c"+Date.now().toString(36),name:n,ar,target:tg}];save();render()}
+  else if(d.prof!==undefined){const n=V("pn").value.trim(),k=V("pk").value.trim();if(!n)return;setDoc(doc(db,"users",me().wa),{name:n,nick:k},{merge:true})}
+  else if(d.rt!==undefined){R.day="";render()}
+  else if(d.sh){const o=R[d.sh];if(o&&o.en)waShare((d.sh==="h"?t("hadithShare"):t("duaShare"))+"\n\n"+(o.ar||"")+"\n\n"+o.en+"\n\n— "+o.src+"\n\n"+t("app")+" 🌙")}
+  else if(d.claim!==undefined){S.admin=myid;save();render()}
+  else if(d.tab){tab=d.tab;render()}
+  else if(d.out!==undefined){e.preventDefault();localStorage.removeItem("me");myid=null;gu&&gu();gu=null;G=[];render()}
+  else if(d.join!==undefined){
+    const n=V("nm").value.trim(),wa=V("wa").value.replace(/\D/g,"").slice(-9);
+    if(!n||wa.length<9){err=t("badLogin");render();err="";return}
+    doJoin(n,wa);
+  }
+});
+$app.addEventListener("change",e=>{
+  const i=e.target.id;
+  if(i==="gst")updateDoc(GD(),{start:e.target.value});
+  else if(i==="gs")updateDoc(GD(),{style:e.target.value});
+  else if(i==="gl")updateDoc(GD(),{len:Math.max(1,Math.round(+e.target.value)||14)});
+  else if(e.target.dataset.tg!==undefined)chEdit(+e.target.dataset.tg,{target:Math.max(1,+e.target.value||1000)});
+});
+</script></body></html>

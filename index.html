@@ -187,6 +187,8 @@ function sz(n,st){
   return Array.from({length:n},(_,i)=>{if(st==="ord"){const e=Math.min(r,i?1:2);r-=e;return b+e}return b+(i<rem?1:0)});
 }
 function assign(ids,r,st){const n=ids.length,s=sz(n,st),o=((-r)%n+n)%n,out=Array(n);let j=1;for(let k=0;k<n;k++){const i=(o+k)%n;out[i]=[j,j+s[i]-1];j+=s[i]}return out}
+const T2=(sw,en)=>lang==="sw"?sw:en;
+const msel=new Set();
 
 function juz(){
   const g=G.find(x=>x.id===gsel)||G[0];
@@ -194,6 +196,27 @@ function juz(){
   return (G.length?`<div class="chips">${G.map(x=>`<button class="chip pill${x.id===gsel?" on":""}" data-g="${x.id}">${esc(x.name)}</button>`).join("")}</div>`:`<p class="mut">${t("noG")}</p>`)
   +(g?gbody(g):"")
   +(pv?`<div class="card"><b>${esc(pv.name)}</b><div class="mut">${t("pvN",pv.n)}</div><button class="go" data-cj>${t("go")}</button><button class="undo" data-cx>${t("helpCancel")}</button></div>`:"")+`<h3>${t("jn")}</h3><div class="card"><input id="gc" placeholder="${t("gc")}"><div class="err">${gerr}</div><button class="go" data-jn>${t("go")}</button></div><h3>${t("mk")}</h3><div class="card"><input id="gn" placeholder="${t("gn")}"><button class="go" data-mk>${t("add")}</button></div>`;
+}
+function mcard(g,r,id,js,R,lab){
+  const own=id===myid;
+  const chips=js.map(j=>{const k=key(g.id,r,j),x=J[k]||{},can=own||x.helper===myid;return `<button class="chip${x.done?" on":""}${x.helper?" help":""}" data-j="${k}"${can?"":" disabled"}>${j}</button>`}).join("");
+  const hl=js.filter(j=>(J[key(g.id,r,j)]||{}).helper).map(j=>{const k=key(g.id,r,j),x=J[k];return `<div class="mut">🤝 ${x.helper===myid?t("helpMe",j,nm(id)):t("helpLine",j,nm(x.helper))}${own&&!x.done?` <button class="sm" data-hc="${k}">${t("helpCancel")}</button>`:""}</div>`}).join("");
+  const todo=js.filter(j=>!(J[key(g.id,r,j)]||{}).done);
+  const panel=own&&todo.length&&R.length>1?`<div class="mut" style="margin-top:10px">${t("helpQ")}</div><div class="row"><select id="hj">${todo.map(j=>`<option value="${j}">${t("juzW")} ${j}</option>`).join("")}</select><select id="hh">${R.filter(x=>x!==myid).map(x=>`<option value="${x}">${esc(nm(x))}</option>`).join("")}</select><button class="sm" data-hs="${r}">${t("ask")}</button></div>`:"";
+  return `<div class="card${own?" hi":""}"><b>${esc(nm(id))}</b> <span class="mut">${t("juzW")} ${lab}</span><div class="chips">${chips}</div>${hl}${panel}</div>`;
+}
+function man(g,r){
+  const ids=g.members||[],as=g.as||{},lead=g.leader===myid,all=Array.from({length:30},(_,i)=>i+1);
+  const free=all.filter(j=>!ids.includes(as[j]));
+  let h="";
+  if(lead){
+    h+=`<div class="card"><b>${T2("Gawa juzuu","Assign juz")}</b><div class="mut">${T2("Gusa juzuu moja au zaidi, kisha chagua mtu. Mzunguko wa dhahabu = bado haijagawiwa.","Tap one or more juz, then pick a person. Gold ring = not assigned yet.")}</div><div class="chips">${all.map(j=>`<button class="chip${msel.has(j)?" on":free.includes(j)?" help":""}" data-ms="${j}">${j}</button>`).join("")}</div>`
+    +(msel.size?`<div class="mut" style="margin-top:10px">${T2("Umechagua","Selected")}: ${[...msel].sort((a,b)=>a-b).join(", ")}</div><div class="row"><select id="mp">${ids.map(id=>`<option value="${id}">${esc(nm(id))}</option>`).join("")}</select><button class="sm" data-masg>${T2("Weka","Assign")}</button><button class="sm" data-mun>${T2("Ondoa","Unassign")}</button></div>`:"")
+    +`<button class="undo" data-mauto>${T2("Gawanya sawa kwa sawa","Split equally")}</button></div>`;
+  }
+  if(free.length)h+=`<div class="mut">${T2("Hazijagawiwa","Not assigned")}: ${free.join(", ")}</div>`;
+  h+=ids.map(id=>{const js=all.filter(j=>as[j]===id);return mcard(g,r,id,js,ids,js.length?js.join(", "):"-")}).join("");
+  return h;
 }
 function gbody(g){
   const ids=g.members||[],lead=g.leader===myid,len=g.len||14,now=new Date(ymd(new Date())+"T00:00:00"),st=g.start?new Date(g.start+"T00:00:00"):null;
@@ -208,15 +231,12 @@ function gbody(g){
       const done=Array.from({length:30},(_,i)=>(J[key(g.id,r,i+1)]||{}).done).filter(Boolean).length;
       h+=`<div class="card"><b>${t("round",r+1)}</b> · ${fmt(s)} – ${fmt(e)}<div class="mut">${t("left",days,done)}</div></div>`;
       if(g.style==="pick")h+=pick(g,r);
+      else if(g.style==="man")h+=man(g,r);
       else{
         const R=g.rr===r?g.rs:ids,a=assign(R,r,g.style);
         if(ids.includes(myid)&&!R.includes(myid))h+=`<div class="card mut">${t("waitN")}</div>`;
-        h+=R.map((id,i)=>{const own=id===myid,rng=a[i],js=Array.from({length:Math.max(0,rng[1]-rng[0]+1)},(_,k)=>rng[0]+k);
-          const chips=js.map(j=>{const k=key(g.id,r,j),x=J[k]||{},can=own||x.helper===myid;return `<button class="chip${x.done?" on":""}${x.helper?" help":""}" data-j="${k}"${can?"":" disabled"}>${j}</button>`}).join("");
-          const hl=js.filter(j=>(J[key(g.id,r,j)]||{}).helper).map(j=>{const k=key(g.id,r,j),x=J[k];return `<div class="mut">🤝 ${x.helper===myid?t("helpMe",j,nm(id)):t("helpLine",j,nm(x.helper))}${own&&!x.done?` <button class="sm" data-hc="${k}">${t("helpCancel")}</button>`:""}</div>`}).join("");
-          const todo=js.filter(j=>!(J[key(g.id,r,j)]||{}).done);
-          const panel=own&&todo.length&&R.length>1?`<div class="mut" style="margin-top:10px">${t("helpQ")}</div><div class="row"><select id="hj">${todo.map(j=>`<option value="${j}">${t("juzW")} ${j}</option>`).join("")}</select><select id="hh">${R.filter(x=>x!==myid).map(x=>`<option value="${x}">${esc(nm(x))}</option>`).join("")}</select><button class="sm" data-hs="${r}">${t("ask")}</button></div>`:"";
-          return `<div class="card${own?" hi":""}"><b>${esc(nm(id))}</b> <span class="mut">${t("juzW")} ${rng[0]>rng[1]?"-":rng[0]==rng[1]?rng[0]:rng[0]+" – "+rng[1]}</span><div class="chips">${chips}</div>${hl}${panel}</div>`}).join("");
+        h+=R.map((id,i)=>{const rng=a[i],js=Array.from({length:Math.max(0,rng[1]-rng[0]+1)},(_,k)=>rng[0]+k);
+          return mcard(g,r,id,js,R,rng[0]>rng[1]?"-":rng[0]==rng[1]?rng[0]:rng[0]+" – "+rng[1])}).join("");
       }
     }
   }
@@ -230,7 +250,7 @@ function pick(g,r){
 function leader(g){
   const ids=g.members||[],len=g.len||14,free=Object.values(U).filter(u=>!ids.includes(u.id)).sort((a,b)=>dn(a).localeCompare(dn(b)));
   return `<h3>${t("leader")}</h3><div class="card"><div class="mut">${t("len")}</div><div class="row">${[7,14,30].map(n=>`<button class="chip${len==n?" on":""}" data-len="${n}">${n}</button>`).join("")}<input id="gl" type="number" inputmode="numeric" value="${len}" style="width:90px"></div>
-  <div class="mut">${t("style")}</div><select id="gs">${["eq","ord","pick"].map(s=>`<option value="${s}"${(g.style||"eq")===s?" selected":""}>${t("s_"+s)}</option>`).join("")}</select>
+  <div class="mut">${t("style")}</div><select id="gs">${["eq","ord","pick","man"].map(s=>`<option value="${s}"${(g.style||"eq")===s?" selected":""}>${s==="man"?T2("Kiongozi anagawa","Leader assigns"):t("s_"+s)}</option>`).join("")}</select>
   <div class="mut">${t("startD")}</div><input type="date" id="gst" value="${g.start||""}"></div>
   <h3>${t("mem")} (${ids.length}/30)</h3>`+ids.map((id,i)=>`<div class="card row" style="justify-content:space-between"><span>${i+1}. ${esc(nm(id))}${id===g.leader?" ⭐":""}</span><span><button class="sm" data-gu="${i}">▲</button><button class="sm" data-gd="${i}">▼</button>${id!==g.leader?`<button class="sm" data-gr="${i}">✕</button>`:""}</span></div>`).join("")
   +`<div class="row"><select id="ga">${free.map(u=>`<option value="${u.id}">${esc(dn(u))}</option>`).join("")}</select><button class="sm" data-gad>${t("add")}</button></div>`;
@@ -275,16 +295,26 @@ function render(){
   const tabs=[...cs.map(c=>[c.id,c.name]),["tot",t("tot")],["rem",t("rem")],["juz",t("juz")],["mem",t("mem")],...(canM?[["chs",t("chs")]]:[])];
   const cur=cs.find(c=>c.id===tab);
   const body=cur?chal(cur):tab==="tot"?totals():tab==="rem"?rem():tab==="juz"?juz():tab==="chs"?chsTab():members();
-  $app.innerHTML=`<header><b>${t("app")} <small class="mut">v5</small></b><span>${esc(dn(me()))} · <a href="#" data-out style="color:var(--tq)">${t("out")}</a><button class="lg" data-lang>${lang==="sw"?"EN":"SW"}</button></span></header><nav>${tabs.map(x=>`<button data-tab="${esc(x[0])}" class="${tab===x[0]?"on":""}">${esc(x[1])}</button>`).join("")}</nav>${body}`;
+  $app.innerHTML=`<header><b>${t("app")} <small class="mut">v6</small></b><span>${esc(dn(me()))} · <a href="#" data-out style="color:var(--tq)">${t("out")}</a><button class="lg" data-lang>${lang==="sw"?"EN":"SW"}</button></span></header><nav>${tabs.map(x=>`<button data-tab="${esc(x[0])}" class="${tab===x[0]?"on":""}">${esc(x[1])}</button>`).join("")}</nav>${body}`;
 }
 
 const GD=()=>doc(db,"groups",gsel),V=id=>document.getElementById(id);
 $app.addEventListener("click",e=>{
-  const b=e.target.closest("[data-t],[data-u],[data-tab],[data-join],[data-out],[data-j],[data-share],[data-prof],[data-claim],[data-sh],[data-rt],[data-lang],[data-cr],[data-ch],[data-ca],[data-add],[data-addc],[data-hs],[data-hc],[data-g],[data-mk],[data-jn],[data-lv],[data-gsh],[data-len],[data-gu],[data-gd],[data-gr],[data-gad],[data-pk],[data-gdel],[data-ur],[data-cj],[data-cx]");if(!b)return;
+  const b=e.target.closest("[data-t],[data-u],[data-tab],[data-join],[data-out],[data-j],[data-share],[data-prof],[data-claim],[data-sh],[data-rt],[data-lang],[data-cr],[data-ch],[data-ca],[data-add],[data-addc],[data-hs],[data-hc],[data-g],[data-mk],[data-jn],[data-lv],[data-gsh],[data-len],[data-gu],[data-gd],[data-gr],[data-gad],[data-pk],[data-gdel],[data-ur],[data-cj],[data-cx],[data-ms],[data-masg],[data-mun],[data-mauto]");if(!b)return;
   const d=b.dataset;
   if(d.t){P[d.t]=(P[d.t]||0)+1;render();clearTimeout(timer[d.t]);timer[d.t]=setTimeout(()=>flush(d.t),700)}
   else if(d.u){if(cnt(dayKey(),d.u,myid)>0){P[d.u]=(P[d.u]||0)-1;render();clearTimeout(timer[d.u]);timer[d.u]=setTimeout(()=>flush(d.u),700)}}
   else if(d.j){setDoc(doc(db,"juz",d.j),{g:gsel,done:!(J[d.j]||{}).done},{merge:true})}
+  else if(d.ms!==undefined){const j=+d.ms;msel.has(j)?msel.delete(j):msel.add(j);render()}
+  else if(d.masg!==undefined||d.mun!==undefined){
+    const g=G.find(x=>x.id===gsel);if(!g||g.leader!==myid||!msel.size)return;
+    const p=d.masg!==undefined?(V("mp")||{}).value:"";if(d.masg!==undefined&&!p)return;
+    const o={};msel.forEach(j=>o["as."+j]=p);msel.clear();updateDoc(GD(),o);render()}
+  else if(d.mauto!==undefined){
+    const g=G.find(x=>x.id===gsel);if(!g||g.leader!==myid||!(g.members||[]).length)return;
+    if(!confirm(T2("Gawanya juzuu zote sawa kwa sawa? Mgawanyo wa sasa utafutwa.","Split all juz equally? The current assignment will be replaced.")))return;
+    const ids=g.members,s=sz(ids.length,"eq"),as={};let j=1;ids.forEach((id,i)=>{for(let k=0;k<s[i];k++)as[j++]=id});
+    msel.clear();updateDoc(GD(),{as});render()}
   else if(d.pk){const x=J[d.pk]||{},rf=doc(db,"juz",d.pk);if(!x.owner)setDoc(rf,{g:gsel,owner:myid,done:false},{merge:true});else if(x.owner===myid)setDoc(rf,x.done?{owner:"",done:false}:{done:true},{merge:true})}
   else if(d.add!==undefined){const [k,n]=d.add.split("|");addCount(k,+n)}
   else if(d.addc!==undefined){const n=Math.round(+V("ci-"+d.addc).value);if(!n)return;addCount(d.addc,n)}
@@ -292,7 +322,7 @@ $app.addEventListener("click",e=>{
   else if(d.hc!==undefined){setDoc(doc(db,"juz",d.hc),{helper:""},{merge:true})}
   else if(d.cj!==undefined){confirmJoin()}
   else if(d.cx!==undefined){pv=null;render()}
-  else if(d.g!==undefined){gsel=d.g;render()}
+  else if(d.g!==undefined){gsel=d.g;msel.clear();render()}
   else if(d.mk!==undefined){const n=V("gn").value.trim();if(!n)return;const id=Math.random().toString(36).slice(2,7);setDoc(doc(db,"groups",id),{name:n,code:id,leader:myid,len:14,style:"eq",start:ymd(new Date()),members:[myid],rs:[],rr:-1});setDoc(doc(db,"users",me().wa),{gs:arrayUnion(id)},{merge:true});gsel=id;render()}
   else if(d.jn!==undefined){joinCode(V("gc").value)}
   else if(d.lv!==undefined){if(confirm(t("lvQ"))){updateDoc(GD(),{members:arrayRemove(myid)});setDoc(doc(db,"users",me().wa),{gs:arrayRemove(gsel)},{merge:true})}}

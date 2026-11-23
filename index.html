@@ -189,6 +189,41 @@ function sz(n,st){
 function assign(ids,r,st){const n=ids.length,s=sz(n,st),o=((-r)%n+n)%n,out=Array(n);let j=1;for(let k=0;k<n;k++){const i=(o+k)%n;out[i]=[j,j+s[i]-1];j+=s[i]}return out}
 const T2=(sw,en)=>lang==="sw"?sw:en;
 const msel=new Set();
+let asUndo=null;
+const CC="255";
+function waTo(wa,text){
+  const e=encodeURIComponent(text),ph=CC+wa,web="https://wa.me/"+ph+"?text="+e;
+  if(/Android/i.test(navigator.userAgent))location.href="intent://send?phone="+ph+"&text="+e+"#Intent;scheme=whatsapp;package=com.whatsapp;S.browser_fallback_url="+encodeURIComponent(web)+";end";
+  else window.open(web,"_blank");
+}
+const cr=a=>{const o=[];for(let i=0;i<a.length;){let k=i;while(a[k+1]===a[k]+1)k++;o.push(k>i?a[i]+"–"+a[k]:""+a[i]);i=k+1}return o.join(", ")};
+function jmap(g,r){
+  const ids=g.members||[],o={};ids.forEach(id=>o[id]=[]);
+  if(g.style==="man"){const as=g.as||{};for(let j=1;j<=30;j++)if(o[as[j]])o[as[j]].push(j)}
+  else if(g.style==="pick"){for(let j=1;j<=30;j++){const x=J[key(g.id,r,j)]||{};if(o[x.owner])o[x.owner].push(j)}}
+  else{const R=g.rr===r?g.rs:ids,a=assign(R,r,g.style);R.forEach((id,i)=>{if(!o[id])return;for(let j=a[i][0];j<=a[i][1];j++)o[id].push(j)})}
+  return o;
+}
+function rinfo(g){
+  if(!g.start)return null;const len=g.len||14,st=new Date(g.start+"T00:00:00"),now=new Date(ymd(new Date())+"T00:00:00"),r=Math.floor((now-st)/(len*864e5));
+  if(r<0)return null;const s=addDays(st,r*len),e=addDays(s,len-1);return{r,s,e,days:Math.round((e-now)/864e5)+1};
+}
+function wmsg(g,id,ri){
+  const js=jmap(g,ri.r)[id]||[],rest=js.filter(j=>!(J[key(g.id,ri.r,j)]||{}).done),part=rest.length<js.length;
+  return T2("Assalamu alaykum "+nm(id)+" 🌙\nUmepangiwa Juzuu "+cr(js)+" kwenye kundi “"+g.name+"”.\n📅 Raundi "+(ri.r+1)+": inaanza "+fmt(ri.s)+", inaisha "+fmt(ri.e)+" (siku "+ri.days+" zimebaki)."+(part?"\nZilizobaki: Juzuu "+cr(rest)+".":"")+"\nMwenyezi Mungu akujaalie kuikamilisha. 🤲",
+    "Assalamu alaykum "+nm(id)+" 🌙\nYou have been assigned Juz "+cr(js)+" in the group “"+g.name+"”.\n📅 Round "+(ri.r+1)+": starts "+fmt(ri.s)+", ends "+fmt(ri.e)+" ("+ri.days+" days left)."+(part?"\nRemaining: Juz "+cr(rest)+".":"")+"\nMay Allah help you complete it. 🤲");
+}
+function wall(g,ri){
+  const m=jmap(g,ri.r),L=(g.members||[]).filter(id=>(m[id]||[]).length).map(id=>"• "+nm(id)+": "+cr(m[id]));
+  return T2("📖 "+g.name+" · Raundi "+(ri.r+1)+"\n📅 Inaanza "+fmt(ri.s)+", inaisha "+fmt(ri.e)+"\n\n"+L.join("\n")+"\n\nMwenyezi Mungu atujaalie kukamilisha. 🤲",
+    "📖 "+g.name+" · Round "+(ri.r+1)+"\n📅 Starts "+fmt(ri.s)+", ends "+fmt(ri.e)+"\n\n"+L.join("\n")+"\n\nMay Allah help us complete it. 🤲");
+}
+function notify(g,r,s,e,days){
+  const m=jmap(g,r),ids=g.members||[];
+  const rows=ids.map(id=>{const js=m[id]||[],u=U[id];if(!js.length||!u||!u.wa)return "";const rest=js.filter(j=>!(J[key(g.id,r,j)]||{}).done);
+    return `<div class="row" style="justify-content:space-between"><span>${esc(nm(id))} <span class="mut">${cr(js)}</span></span>${rest.length?`<button class="sm" data-wn="${esc(id)}">${T2("Tuma","Send")} 📲</button>`:"✅"}</div>`}).join("");
+  return `<h3>${T2("Ukumbusho wa WhatsApp","WhatsApp reminders")}</h3><div class="card"><div class="mut">${T2("Gusa Tuma kwa kila mtu: WhatsApp itafunguka na ujumbe tayari (juzuu zake, mwanzo na mwisho wa raundi). Unaweza kutuma tena katikati ya raundi; ujumbe utataja zilizobaki.","Tap Send for each person: WhatsApp opens with the message ready (their juz, round start and end). You can resend mid-round; it will list what remains.")}</div>${rows}<button class="go" data-wall>${T2("Tuma orodha kwenye kundi la WhatsApp","Send list to the WhatsApp group")}</button></div>`;
+}
 
 function juz(){
   const g=G.find(x=>x.id===gsel)||G[0];
@@ -211,8 +246,8 @@ function man(g,r){
   let h="";
   if(lead){
     h+=`<div class="card"><b>${T2("Gawa juzuu","Assign juz")}</b><div class="mut">${T2("Gusa juzuu moja au zaidi, kisha chagua mtu. Mzunguko wa dhahabu = bado haijagawiwa.","Tap one or more juz, then pick a person. Gold ring = not assigned yet.")}</div><div class="chips">${all.map(j=>`<button class="chip${msel.has(j)?" on":free.includes(j)?" help":""}" data-ms="${j}">${j}</button>`).join("")}</div>`
-    +(msel.size?`<div class="mut" style="margin-top:10px">${T2("Umechagua","Selected")}: ${[...msel].sort((a,b)=>a-b).join(", ")}</div><div class="row"><select id="mp">${ids.map(id=>`<option value="${id}">${esc(nm(id))}</option>`).join("")}</select><button class="sm" data-masg>${T2("Weka","Assign")}</button><button class="sm" data-mun>${T2("Ondoa","Unassign")}</button></div>`:"")
-    +`<button class="undo" data-mauto>${T2("Gawanya sawa kwa sawa","Split equally")}</button></div>`;
+    +(msel.size?`<div class="mut" style="margin-top:10px">${T2("Umechagua","Selected")}: ${[...msel].sort((a,b)=>a-b).map(j=>j+" → "+(ids.includes(as[j])?nm(as[j]):"—")).join(" · ")}</div><div class="row"><select id="mp">${ids.map(id=>`<option value="${id}">${esc(nm(id))}</option>`).join("")}</select><button class="sm" data-masg>${T2("Weka","Assign")}</button><button class="sm" data-mun>${T2("Ondoa","Unassign")}</button></div>`:"")
+    +`<button class="undo" data-mauto>${T2("Gawanya sawa kwa sawa","Split equally")}</button>${asUndo&&asUndo.g===g.id?`<button class="undo" data-mundo>↩ ${T2("Tengua mabadiliko ya mwisho","Undo last change")}</button>`:""}</div>`;
   }
   if(free.length)h+=`<div class="mut">${T2("Hazijagawiwa","Not assigned")}: ${free.join(", ")}</div>`;
   h+=ids.map(id=>{const js=all.filter(j=>as[j]===id);return mcard(g,r,id,js,ids,js.length?js.join(", "):"-")}).join("");
@@ -238,6 +273,7 @@ function gbody(g){
         h+=R.map((id,i)=>{const rng=a[i],js=Array.from({length:Math.max(0,rng[1]-rng[0]+1)},(_,k)=>rng[0]+k);
           return mcard(g,r,id,js,R,rng[0]>rng[1]?"-":rng[0]==rng[1]?rng[0]:rng[0]+" – "+rng[1])}).join("");
       }
+      if(lead)h+=notify(g,r,s,e,days);
     }
   }
   return h+(lead?leader(g):ids.includes(myid)?`<button class="undo" data-lv>${t("lv")}</button>`:"");
@@ -295,12 +331,12 @@ function render(){
   const tabs=[...cs.map(c=>[c.id,c.name]),["tot",t("tot")],["rem",t("rem")],["juz",t("juz")],["mem",t("mem")],...(canM?[["chs",t("chs")]]:[])];
   const cur=cs.find(c=>c.id===tab);
   const body=cur?chal(cur):tab==="tot"?totals():tab==="rem"?rem():tab==="juz"?juz():tab==="chs"?chsTab():members();
-  $app.innerHTML=`<header><b>${t("app")} <small class="mut">v6</small></b><span>${esc(dn(me()))} · <a href="#" data-out style="color:var(--tq)">${t("out")}</a><button class="lg" data-lang>${lang==="sw"?"EN":"SW"}</button></span></header><nav>${tabs.map(x=>`<button data-tab="${esc(x[0])}" class="${tab===x[0]?"on":""}">${esc(x[1])}</button>`).join("")}</nav>${body}`;
+  $app.innerHTML=`<header><b>${t("app")} <small class="mut">v7</small></b><span>${esc(dn(me()))} · <a href="#" data-out style="color:var(--tq)">${t("out")}</a><button class="lg" data-lang>${lang==="sw"?"EN":"SW"}</button></span></header><nav>${tabs.map(x=>`<button data-tab="${esc(x[0])}" class="${tab===x[0]?"on":""}">${esc(x[1])}</button>`).join("")}</nav>${body}`;
 }
 
 const GD=()=>doc(db,"groups",gsel),V=id=>document.getElementById(id);
 $app.addEventListener("click",e=>{
-  const b=e.target.closest("[data-t],[data-u],[data-tab],[data-join],[data-out],[data-j],[data-share],[data-prof],[data-claim],[data-sh],[data-rt],[data-lang],[data-cr],[data-ch],[data-ca],[data-add],[data-addc],[data-hs],[data-hc],[data-g],[data-mk],[data-jn],[data-lv],[data-gsh],[data-len],[data-gu],[data-gd],[data-gr],[data-gad],[data-pk],[data-gdel],[data-ur],[data-cj],[data-cx],[data-ms],[data-masg],[data-mun],[data-mauto]");if(!b)return;
+  const b=e.target.closest("[data-t],[data-u],[data-tab],[data-join],[data-out],[data-j],[data-share],[data-prof],[data-claim],[data-sh],[data-rt],[data-lang],[data-cr],[data-ch],[data-ca],[data-add],[data-addc],[data-hs],[data-hc],[data-g],[data-mk],[data-jn],[data-lv],[data-gsh],[data-len],[data-gu],[data-gd],[data-gr],[data-gad],[data-pk],[data-gdel],[data-ur],[data-cj],[data-cx],[data-ms],[data-masg],[data-mun],[data-mauto],[data-mundo],[data-wn],[data-wall]");if(!b)return;
   const d=b.dataset;
   if(d.t){P[d.t]=(P[d.t]||0)+1;render();clearTimeout(timer[d.t]);timer[d.t]=setTimeout(()=>flush(d.t),700)}
   else if(d.u){if(cnt(dayKey(),d.u,myid)>0){P[d.u]=(P[d.u]||0)-1;render();clearTimeout(timer[d.u]);timer[d.u]=setTimeout(()=>flush(d.u),700)}}
@@ -309,12 +345,15 @@ $app.addEventListener("click",e=>{
   else if(d.masg!==undefined||d.mun!==undefined){
     const g=G.find(x=>x.id===gsel);if(!g||g.leader!==myid||!msel.size)return;
     const p=d.masg!==undefined?(V("mp")||{}).value:"";if(d.masg!==undefined&&!p)return;
-    const o={};msel.forEach(j=>o["as."+j]=p);msel.clear();updateDoc(GD(),o);render()}
+    const o={};msel.forEach(j=>o["as."+j]=p);asUndo={g:gsel,as:{...(g.as||{})}};msel.clear();updateDoc(GD(),o);render()}
   else if(d.mauto!==undefined){
     const g=G.find(x=>x.id===gsel);if(!g||g.leader!==myid||!(g.members||[]).length)return;
     if(!confirm(T2("Gawanya juzuu zote sawa kwa sawa? Mgawanyo wa sasa utafutwa.","Split all juz equally? The current assignment will be replaced.")))return;
     const ids=g.members,s=sz(ids.length,"eq"),as={};let j=1;ids.forEach((id,i)=>{for(let k=0;k<s[i];k++)as[j++]=id});
-    msel.clear();updateDoc(GD(),{as});render()}
+    asUndo={g:gsel,as:{...(g.as||{})}};msel.clear();updateDoc(GD(),{as});render()}
+  else if(d.mundo!==undefined){if(!asUndo||asUndo.g!==gsel)return;updateDoc(GD(),{as:asUndo.as});asUndo=null;msel.clear();render()}
+  else if(d.wn!==undefined){const g=G.find(x=>x.id===gsel),ri=g&&rinfo(g),u=U[d.wn];if(!ri||!u)return;waTo(u.wa,wmsg(g,d.wn,ri))}
+  else if(d.wall!==undefined){const g=G.find(x=>x.id===gsel),ri=g&&rinfo(g);if(!ri)return;waShare(wall(g,ri))}
   else if(d.pk){const x=J[d.pk]||{},rf=doc(db,"juz",d.pk);if(!x.owner)setDoc(rf,{g:gsel,owner:myid,done:false},{merge:true});else if(x.owner===myid)setDoc(rf,x.done?{owner:"",done:false}:{done:true},{merge:true})}
   else if(d.add!==undefined){const [k,n]=d.add.split("|");addCount(k,+n)}
   else if(d.addc!==undefined){const n=Math.round(+V("ci-"+d.addc).value);if(!n)return;addCount(d.addc,n)}

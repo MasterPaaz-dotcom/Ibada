@@ -85,7 +85,7 @@ function waShare(text){
 }
 
 const app=initializeApp(CFG),db=getFirestore(app),auth=getAuth(app);
-let S={old:[],admin:"",ch:[],start:""},U={},C={},G=[],J={},P={},r1=false,r2=false,tab="",myid=localStorage.getItem("me"),timer={},err="",gerr="",gsel="",jg="",gu=null,ju=null,cd="",cu=null,ru={},pv=null,au=false,GM={},gm={};
+let S={old:[],admin:"",ch:[],start:"",gone:[]},U={},C={},G=[],J={},P={},r1=false,r2=false,tab="",myid=localStorage.getItem("me"),timer={},err="",gerr="",gsel="",jg="",gu=null,ju=null,cd="",cu=null,ru={},pv=null,au=false,GM={},gm={};
 const pg=new URLSearchParams(location.search).get("g");if(pg)localStorage.setItem("pg",pg);
 const CH=()=>S.ch&&S.ch.length?S.ch:DCH;
 const act=()=>CH().filter(c=>!c.off);
@@ -101,12 +101,13 @@ function addCount(k,n){const key=dayKey()+"|"+k+"|"+myid,cur=cnt(dayKey(),k,myid
 const key=(g,r,j)=>g==="sib"?r+"_"+j:g+"_"+r+"_"+j;
 
 function start(){
-  onSnapshot(doc(db,"settings","main"),d=>{const x=d.exists()?d.data():{};S={old:x.members||[],admin:x.admin||"",ch:x.ch||[],start:x.start||""};r1=true;draw()});
+  onSnapshot(doc(db,"settings","main"),d=>{const x=d.exists()?d.data():{};S={old:x.members||[],admin:x.admin||"",ch:x.ch||[],start:x.start||"",gone:x.gone||[]};r1=true;draw()});
   onSnapshot(collection(db,"users"),sn=>{U={};sn.forEach(d=>{const x=d.data();U[x.id]=x});r2=true;syncG();draw()});
   subC();if(myid)claim();
 }
 const claim=()=>setDoc(doc(db,"uid",auth.currentUser.uid),{id:myid});
 function subC(){if(!au)return;const d=dayKey();if(cd===d)return;cd=d;cu&&cu();cu=onSnapshot(query(collection(db,"counts"),where("day","in",[d,yKey()])),sn=>{C={};sn.forEach(s=>{const x=s.data();C[x.day+"|"+x.type+"|"+x.mid]=x.n||0});draw()})}
+const GV=()=>G.filter(x=>!(S.gone||[]).includes(x.id));
 const gg=()=>{G=Object.values(GM).filter(g=>(g.members||[]).includes(myid));draw()};
 function syncG(){
   if(!au||!myid||!me())return;const want=new Set(me().gs||[]);
@@ -119,17 +120,13 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden)Object.keys
 setInterval(()=>{subC();draw()},60000);
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 
-async function migrate(){
-  if(!S.old.length)return;const g=await getDoc(doc(db,"groups","sib"));if(g.exists())return;
-  await setDoc(doc(db,"groups","sib"),{name:"Ndugu",code:"sib",leader:S.admin||S.old[0].id,len:14,style:"ord",start:S.start||"",members:S.old.map(m=>m.id),rs:[],rr:-1});
-  (await getDocs(collection(db,"juz"))).forEach(d=>{if(!d.data().g)setDoc(d.ref,{g:"sib"},{merge:true})});
-}
+async function migrate(){}
 let mg=0;
 async function migUsers(){
   for(const old of S.old){
     if(!old.wa||U[old.id])continue;const rf=doc(db,"users",old.wa);if((await getDoc(rf)).exists())continue;
     const tot={};(await getDocs(query(collection(db,"counts"),where("mid","==",old.id)))).forEach(d=>{const x=d.data();tot[x.type]=(tot[x.type]||0)+(x.n||0)});
-    await setDoc(rf,{id:old.id,name:old.name,wa:old.wa,nick:old.nick||"",anick:old.anick||"",tot,gs:["sib"]});
+    await setDoc(rf,{id:old.id,name:old.name,wa:old.wa,nick:old.nick||"",anick:old.anick||"",tot,gs:[]});
   }
   await migrate();await backfill();
 }
@@ -142,7 +139,7 @@ async function doJoin(n,wa){
   if(s.exists())u=s.data();
   else{
     const old=S.old.find(x=>x.wa===wa);u={id:old?old.id:"m"+wa,name:old?old.name:n,wa};myid=u.id;await claim();
-    if(old){u.nick=old.nick||"";u.anick=old.anick||"";const tot={};(await getDocs(query(collection(db,"counts"),where("mid","==",old.id)))).forEach(d=>{const x=d.data();tot[x.type]=(tot[x.type]||0)+(x.n||0)});u.tot=tot;u.gs=["sib"]}
+    if(old){u.nick=old.nick||"";u.anick=old.anick||"";const tot={};(await getDocs(query(collection(db,"counts"),where("mid","==",old.id)))).forEach(d=>{const x=d.data();tot[x.type]=(tot[x.type]||0)+(x.n||0)});u.tot=tot;u.gs=[]}
     await setDoc(doc(db,"users",wa),u);U[u.id]=u;if(old)await migrate();
   }
   myid=u.id;await claim();localStorage.setItem("me",myid);syncG();render();
@@ -226,9 +223,9 @@ function notify(g,r,s,e,days){
 }
 
 function juz(){
-  const g=G.find(x=>x.id===gsel)||G[0];
+  const g=GV().find(x=>x.id===gsel)||GV()[0];
   if(g){gsel=g.id;if(jg!==g.id){jg=g.id;subJ()}}
-  return (G.length?`<div class="chips">${G.map(x=>`<button class="chip pill${x.id===gsel?" on":""}" data-g="${x.id}">${esc(x.name)}</button>`).join("")}</div>`:`<p class="mut">${t("noG")}</p>`)
+  return (GV().length?`<div class="chips">${GV().map(x=>`<button class="chip pill${x.id===gsel?" on":""}" data-g="${x.id}">${esc(x.name)}</button>`).join("")}</div>`:`<p class="mut">${t("noG")}</p>`)
   +(g?gbody(g):"")
   +(pv?`<div class="card"><b>${esc(pv.name)}</b><div class="mut">${t("pvN",pv.n)}</div><button class="go" data-cj>${t("go")}</button><button class="undo" data-cx>${t("helpCancel")}</button></div>`:"")+`<h3>${t("jn")}</h3><div class="card"><input id="gc" placeholder="${t("gc")}"><div class="err">${gerr}</div><button class="go" data-jn>${t("go")}</button></div><h3>${t("mk")}</h3><div class="card"><input id="gn" placeholder="${t("gn")}"><button class="go" data-mk>${t("add")}</button></div>`;
 }
@@ -285,7 +282,7 @@ function pick(g,r){
 }
 function leader(g){
   const ids=g.members||[],len=g.len||14,free=Object.values(U).filter(u=>!ids.includes(u.id)).sort((a,b)=>dn(a).localeCompare(dn(b)));
-  return `<h3>${t("leader")}</h3><div class="card"><div class="mut">${t("len")}</div><div class="row">${[7,14,30].map(n=>`<button class="chip${len==n?" on":""}" data-len="${n}">${n}</button>`).join("")}<input id="gl" type="number" inputmode="numeric" value="${len}" style="width:90px"></div>
+  return `<h3>${t("leader")}</h3><div class="card"><div class="mut">${T2("Jina la kundi","Group name")}</div><div class="row"><input id="gnm" value="${esc(g.name)}"><button class="sm" data-grn>${t("save")}</button></div><div class="mut">${t("len")}</div><div class="row">${[7,14,30].map(n=>`<button class="chip${len==n?" on":""}" data-len="${n}">${n}</button>`).join("")}<input id="gl" type="number" inputmode="numeric" value="${len}" style="width:90px"></div>
   <div class="mut">${t("style")}</div><select id="gs">${["eq","ord","pick","man"].map(s=>`<option value="${s}"${(g.style||"eq")===s?" selected":""}>${s==="man"?T2("Kiongozi anagawa","Leader assigns"):t("s_"+s)}</option>`).join("")}</select>
   <div class="mut">${t("startD")}</div><input type="date" id="gst" value="${g.start||""}"></div>
   <h3>${t("mem")} (${ids.length}/30)</h3>`+ids.map((id,i)=>`<div class="card row" style="justify-content:space-between"><span>${i+1}. ${esc(nm(id))}${id===g.leader?" ⭐":""}</span><span><button class="sm" data-gu="${i}">▲</button><button class="sm" data-gd="${i}">▼</button>${id!==g.leader?`<button class="sm" data-gr="${i}">✕</button>`:""}</span></div>`).join("")
@@ -331,12 +328,12 @@ function render(){
   const tabs=[...cs.map(c=>[c.id,c.name]),["tot",t("tot")],["rem",t("rem")],["juz",t("juz")],["mem",t("mem")],...(canM?[["chs",t("chs")]]:[])];
   const cur=cs.find(c=>c.id===tab);
   const body=cur?chal(cur):tab==="tot"?totals():tab==="rem"?rem():tab==="juz"?juz():tab==="chs"?chsTab():members();
-  $app.innerHTML=`<header><b>${t("app")} <small class="mut">v7</small></b><span>${esc(dn(me()))} · <a href="#" data-out style="color:var(--tq)">${t("out")}</a><button class="lg" data-lang>${lang==="sw"?"EN":"SW"}</button></span></header><nav>${tabs.map(x=>`<button data-tab="${esc(x[0])}" class="${tab===x[0]?"on":""}">${esc(x[1])}</button>`).join("")}</nav>${body}`;
+  $app.innerHTML=`<header><b>${t("app")} <small class="mut">v9</small></b><span>${esc(dn(me()))} · <a href="#" data-out style="color:var(--tq)">${t("out")}</a><button class="lg" data-lang>${lang==="sw"?"EN":"SW"}</button></span></header><nav>${tabs.map(x=>`<button data-tab="${esc(x[0])}" class="${tab===x[0]?"on":""}">${esc(x[1])}</button>`).join("")}</nav>${body}`;
 }
 
 const GD=()=>doc(db,"groups",gsel),V=id=>document.getElementById(id);
 $app.addEventListener("click",e=>{
-  const b=e.target.closest("[data-t],[data-u],[data-tab],[data-join],[data-out],[data-j],[data-share],[data-prof],[data-claim],[data-sh],[data-rt],[data-lang],[data-cr],[data-ch],[data-ca],[data-add],[data-addc],[data-hs],[data-hc],[data-g],[data-mk],[data-jn],[data-lv],[data-gsh],[data-len],[data-gu],[data-gd],[data-gr],[data-gad],[data-pk],[data-gdel],[data-ur],[data-cj],[data-cx],[data-ms],[data-masg],[data-mun],[data-mauto],[data-mundo],[data-wn],[data-wall]");if(!b)return;
+  const b=e.target.closest("[data-t],[data-u],[data-tab],[data-join],[data-out],[data-j],[data-share],[data-prof],[data-claim],[data-sh],[data-rt],[data-lang],[data-cr],[data-ch],[data-ca],[data-add],[data-addc],[data-hs],[data-hc],[data-g],[data-mk],[data-jn],[data-lv],[data-gsh],[data-len],[data-gu],[data-gd],[data-gr],[data-gad],[data-pk],[data-gdel],[data-ur],[data-cj],[data-cx],[data-ms],[data-masg],[data-mun],[data-mauto],[data-mundo],[data-wn],[data-wall],[data-grn]");if(!b)return;
   const d=b.dataset;
   if(d.t){P[d.t]=(P[d.t]||0)+1;render();clearTimeout(timer[d.t]);timer[d.t]=setTimeout(()=>flush(d.t),700)}
   else if(d.u){if(cnt(dayKey(),d.u,myid)>0){P[d.u]=(P[d.u]||0)-1;render();clearTimeout(timer[d.u]);timer[d.u]=setTimeout(()=>flush(d.u),700)}}
@@ -366,7 +363,13 @@ $app.addEventListener("click",e=>{
   else if(d.jn!==undefined){joinCode(V("gc").value)}
   else if(d.lv!==undefined){if(confirm(t("lvQ"))){updateDoc(GD(),{members:arrayRemove(myid)});setDoc(doc(db,"users",me().wa),{gs:arrayRemove(gsel)},{merge:true})}}
   else if(d.gsh!==undefined){const g=G.find(x=>x.id===gsel);if(g)waShare(t("shMsg",g.name,location.origin+location.pathname+"?g="+g.id))}
-  else if(d.gdel!==undefined){const g=G.find(x=>x.id===gsel);if(!g||!confirm(t("delQ",g.name)))return;const id=g.id;gsel="";jg="";(async()=>{(await getDocs(query(collection(db,"juz"),where("g","==",id)))).forEach(d=>deleteDoc(d.ref));await deleteDoc(doc(db,"groups",id))})()}
+  else if(d.gdel!==undefined){const g=G.find(x=>x.id===gsel);if(!g||!confirm(t("delQ",g.name)))return;const id=g.id;gsel="";jg="";(async()=>{
+    try{await deleteDoc(doc(db,"groups",id))}
+    catch(e){try{await setDoc(doc(db,"settings","main"),{gone:arrayUnion(id)},{merge:true});alert(T2("Firestore haikuruhusu kufuta kundi (","Firestore does not allow deleting the group (")+e.code+T2("). Nimelificha kwa kila mtu badala yake.","). I hid it for everyone instead."))}catch(e2){alert(T2("Imeshindwa kufuta kundi: ","Could not delete the group: ")+e.code)}return}
+    try{(await getDocs(query(collection(db,"juz"),where("g","==",id)))).forEach(d=>deleteDoc(d.ref))}catch(e){}
+    Object.values(U).forEach(u=>{if((u.gs||[]).includes(id))setDoc(doc(db,"users",u.wa),{gs:arrayRemove(id)},{merge:true}).catch(()=>{})})
+  })()}
+  else if(d.grn!==undefined){const v=(V("gnm")||{}).value.trim(),g=G.find(x=>x.id===gsel);if(!v||!g||g.leader!==myid&&S.admin!==myid)return;V("gnm").blur();updateDoc(GD(),{name:v}).catch(e=>alert(e.code))}
   else if(d.ur!==undefined){const u=U[d.ur];if(u&&confirm(t("rmQ",dn(u))))deleteDoc(doc(db,"users",u.wa))}
   else if(d.len!==undefined){updateDoc(GD(),{len:+d.len})}
   else if(d.gad!==undefined){const g=G.find(x=>x.id===gsel),a=V("ga");if(g&&a&&a.value&&g.members.length<30){updateDoc(GD(),{members:arrayUnion(a.value)});const u=U[a.value];if(u)setDoc(doc(db,"users",u.wa),{gs:arrayUnion(gsel)},{merge:true})}}
